@@ -1,6 +1,11 @@
 # ChargePort_Schedule
 智能充电桩调度系统小组作业
 
+## DDL
+6月7日23:30：作业3 [https://docs.qq.com/doc/DSHlpWEJxUnBGWU9R?u=8a51e56e7cee484a9ced038766512017](https://docs.qq.com/doc/DSHlpWEJxUnBGWU9R?u=8a51e56e7cee484a9ced038766512017)
+
+6月12日23:30：个人代码任务完成 + 整体模块间能够跑通
+
 ## 成员分工
 
 ### User:（YY PL）
