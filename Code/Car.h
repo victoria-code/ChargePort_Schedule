@@ -10,7 +10,7 @@ struct CarAsk //汽车充电请求
 };
 struct CarReply //汽车充电响应
 {
-    CarAsk* Ask;
+    CarAsk Ask;
     int SID; // 充电桩ID
     int num; // 在该充电桩的排队号
 };
