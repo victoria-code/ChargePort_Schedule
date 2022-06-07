@@ -10,14 +10,14 @@ class Server{
 
         /*with admin*/        
         vector<string>admin;    //所有管理员账户名,用于验证管理员身份
-        int replyAdmin(string usrname,int cmd);        //响应管理员客户端请求
+        int replyAdmin(string usrname,int cmd,vector<pair<string,string>>info);        //响应管理员客户端请求
 
         /*with user*/
-        vector<string>user;     //记录所有用户名
+        vector<string,pair<string,int>>user;     //所有用户信息（用户名,<用户密码，余额》)
         vector<string>wUser;    //记录车辆位于等候区的用户
         vector<string>CUser;    //记录车辆位于充电区的用户
         vector<string>CingUser;  //记录当前正在充电的用户
-        int replyUser(string usrname,int cmd);//响应用户客户端请求
+        int replyUser(string usrname,int cmd,vector<pair<string,string>>info);//响应用户客户端请求
         string queueNumGenerate(string usrname,int mode);//车辆排队号码生成
         int schedule(string usrname,int mode,int amount);//调度策略生成，返回充电桩编号
         int recordBill(string usrname,int mode,int time);//费用计算，返回指定用户需要支付的充电费用,time为实际充电时间
