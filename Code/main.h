@@ -8,6 +8,10 @@
 #define FAST_POWER 30   //快充功率（单位：度/小时）
 #define SLOW_POWER 7    //慢充功率（单位：度/小时）
 
+//充电模式mode
+#define FAST 0
+#define SLOW 1
+
 //用户客户端对服务器请求cmd编号（可自加）
 #define QUEUE_NUM_GET  100  //车辆排队号码生成
 #define SCHEDULE_GET   101  //调度策略生成
