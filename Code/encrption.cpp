@@ -1,4 +1,4 @@
-#include "encrption.h"
+#include "encryption.h"
 
 string encryption::sha1(const string& strRaw){
     string str(strRaw);
