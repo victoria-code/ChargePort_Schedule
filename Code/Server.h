@@ -1,8 +1,7 @@
 #include "main.h"
 class Server{
     public:
-        /*with chargePort*/
-        
+        /*with chargePort*/    
         int FNum,TNum;  //当前等候区内正在等候的快充/慢充车辆数目 
         int fSeq,tSeq;  //当前等候区内即将进入充电区的车辆编号
         vector<chargePortData*>cData;//记录充电桩状态信息
@@ -25,6 +24,39 @@ class Server{
 
 
 };
+
+//数据库更新
+class DBupdata{
+    public:
+        /*用户信息维护*/
+        string usrFileName;//存储用户(顾客、管理员)信息文件的绝对路径名
+        int addUser(usrEntry* data); //新增用户     
+        int usrDataChange(usrEntry* data);//用户信息维护
+        
+        /*充电日志*/
+        string logFileName;//记录历史充电记录文件绝对路径名
+        int addLogEntry();//新增日志条目
+};
+
+
+//用户数据库条目
+struct usrEntry{
+    string usrname;
+    string passwd;//密码
+    string role;//customer 或 admin
+    int balance;
+};
+
+//日志条目
+struct logEntry{
+    string usrname;
+    int SID;//充电桩ID
+    string queueNum;//排队号码
+    int mode;//充电模式
+    int time;//实际充电时间
+    int cost;//金额
+};
+
 
 /*充电桩信息记录*/
 struct chargePortData{
