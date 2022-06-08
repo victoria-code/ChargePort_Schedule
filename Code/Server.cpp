@@ -4,6 +4,64 @@
 
 /*Server类实现*/
 
+//服务器初始化
+Server::Server(){
+    //获取充电桩当前信息
+
+}
+
+//服务器下线前同步数据库
+Server::~Server(){
+    this->database.update();
+}
+
+/*database Interface*/
+
+//用户信息查询
+int Server::usrFind(string usrname,usrEntry *res){
+    auto it=this->database.usrData.find(usrname);
+    //用户不存在
+    if(it==this->database.usrData.end()){
+        res=nullptr;
+        return -1;
+    }
+    res=it->second;
+    return 0;
+}
+
+//用户充电记录查询
+int Server::logFind(string usrname,vector<logEntry*>&res){
+    auto it=this->database.logData.find(usrname);
+    if(it==this->database.logData.end()){
+        cout<<"the usr "<<usrname<<" has no charge log currently."<<endl;
+        return -1;
+    }
+    res.assign(it->second.begin(),it->second.end());
+    return 0;
+}
+
+//用户信息更新<新增用户，用户信息改变，用户注销>
+int Server::usrDataUpdate(bool to_delete,usrEntry *uE){
+    auto it=this->database.usrData.find(uE->usrname);
+
+    //注销
+    if(to_delete){
+        //待注销的用户名不存在
+        if(it==this->database.usrData.end()){
+            cout<<"待注销的账户<"<<uE->usrname<<">不存在！"<<endl;
+            return 0;
+        }
+        this->database.usrData.erase(it);
+        cout<<"账户<"<<uE->usrname<<">注销成功！"<<endl;
+        return 0;
+    }
+
+    //注册 or 用户信息改变
+    this->database.usrData[uE->usrname]=uE;
+    return 0;
+}
+
+
 /*server with chargePort*/
 
 
@@ -14,6 +72,84 @@
 
 /*server with user*/
 
+//响应用户客户端请求
+int replyUser(Info *usrInfo){
+
+}
+
+//cmd:100 登录验证,登录成功则获取用户信息
+int Server::logIn(string usrname,string passwd,usrEntry *uE){
+    //检验用户是否存在
+    if(Server::usrFind(usrname,uE)!=0){
+        cout<<"用户名<"<<usrname<<">不存在！"<<endl;
+        return -1;
+    }
+    //判断密码是否正确
+    else if(passwd!=uE->passwd){
+        cout<<"用户名和密码不匹配！"<<endl;
+        return -2;
+    }
+    //登录成功
+    else{
+        cout<<"登录成功！"<<endl;
+        return 0;
+    }
+}
+
+//cmd:101 注册认证
+int Server::signIn(string usrname,string passwd,string role){
+    //用户名长度非法
+    if(usrname.size()>20||usrname.size()<2){
+        cout<<"用户名长度必须在5~20之间!"<<endl;
+        return -1;
+    }
+    //用户名已存在
+    else if(this->database.usrData.find(usrname)!=this->database.usrData.end()){
+        cout<<"用户名已存在！"<<endl;
+        return -2;
+    }
+    
+    cout<<"注册成功!"<<endl;
+    usrEntry* uE=new struct usrEntry();
+    uE->usrname=usrname;
+    uE->passwd=passwd;
+    uE->role=role;
+    uE->balance=0;
+    usrDataUpdate(false,uE);
+    return 0;
+}
+
+//cmd:102 充值、扣费（amount表示具体增、减金额）
+int Server::balanceChange(string usrname,int amount){
+    auto it=this->database.usrData.find(usrname);
+    if(it==this->database.usrData.end())
+        return -1;
+
+    //充值
+    if(amount>0){
+        it->second->balance+=amount;
+        cout<<"充值成功！"<<endl;
+    }
+    //扣费
+    if(amount<0){
+        it->second->balance+=amount;
+        cout<<"扣费成功"<<endl;
+    }
+    return 0;
+}
+
+//cmd:103 用户注销
+int Server::deleteUsr(string usrname){
+    usrEntry* uE;
+    uE->usrname=usrname;
+    return Server::usrDataUpdate(true,uE);
+}
+
+
+string queueNumGenerate(string usrname,int mode);//车辆排队号码生成
+int schedule(string usrname,int mode,int amount);//调度策略生成，返回充电桩编号
+int recordBill(string usrname,int mode,int time);//费用计算，返回指定用户需要支付的充电费用,time为实际充电时间
+bool usrDataMaintain(string usrname,vector<pair<string,string>> info);//用户信息维护：info格式：<“被修改属性名”，“修改后属性值”>】
 
 
 
@@ -59,7 +195,7 @@ DBupdate::DBupdate(){
             //日志条目解析
             logEntry* lE=new logEntry();
             if(entryResolve(lE,line)==0){
-                DBupdate::logData.insert(make_pair(lE->usrname,lE));
+                DBupdate::logData[lE->usrname].push_back(lE);
             }
         }
     }
@@ -113,7 +249,7 @@ int DBupdate::addUser(usrEntry *data){
 //新增日志条目
 int DBupdate::addLogEntry(logEntry* data){
     if(data!=nullptr){
-        this->logData.insert(make_pair(data->usrname,data));
+        this->logData[data->usrname].push_back(data);
         return 0;
     }
     return -1;
@@ -135,10 +271,12 @@ int DBupdate::update(){
     //更新服务日志
     ofstream log;
     log.open(LOG_FILENAME,ios::trunc|ios::out);
-    map<string,logEntry*>::reverse_iterator it;
+    map<string,vector<logEntry*>>::reverse_iterator it;
     for(it=this->logData.rbegin();it!=this->logData.rend();it++){
-        string line=DBupdate::getEntry(it->second);
-        log<<line<<"\n";
+        for(int j=0;j< it->second.size();j++){
+            string line=DBupdate::getEntry(it->second[j]);
+            log<<line<<"\n";
+        }
     }
     uf.close();
 }
