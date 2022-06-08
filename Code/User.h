@@ -1,76 +1,100 @@
 #ifndef __USER_H__
 #define __USER_H__
 
+#include "Car.h"    //充电相关
+
 #include<iostream>
 #include<string>
+#include<math.h>    //floor()
 
 using namespace std;
 
+enum USER_TYPE {ADMIN=0, CUSTOMER};
+
 class User{     //用户基类
 protected:
-//test
-//public:
-    string usrname;     //用户名
+//public: //test
+    int type;   //用户类型（1：消费者；0：管理员）
+    string usrname = "";    //用户名
+    double balance = 0.0;   //余额（仅对消费者有意义）
+    Car *car = nullptr;    //消费者的车辆
 
 public:
+    ~User(){
+        if(this->car != nullptr)
+            delete this->car;
+    }
+
     //用户登录
     int logIN();
-    int sendLogInRequest(string usrname, string password);  //发送登录请求
+    int sendLogInRequest(string usrname, string password);  //发送登录请求报文
 
     //用户注册
     int signUp();
-    int sendSignUpRequest(string usrname, string password); //发送注册请求
+    int sendSignUpRequest(string usrname, string password); //发送注册请求报文
 
     //用户注销
-    int deleteAccount();
-    int sendDeleteRequest(string usrname);    //发送注销请求
+    virtual int deleteAccount(){ return 0;}    //由子类实现
+    int sendDeleteRequest(string usrname);    //发送注销请求报文
+
+    //获取用户余额(仅对消费者有意义)
+    double getUsrBalance();
+    //获取用户车辆信息（仅对消费者有意义）
+    Car *getCarInfo();
 
     /*------Utils------*/
     //判断充值金额合法性
     bool isPosNum(string str);
     //判断输入是否是合法选项(max: 最大选项序号)
     bool isLegalChoice(string str, int max);
+    //输出选项
+    void printChoice(const string choice[], int size);
+    //获取时间（秒转换为时分秒）
+    string getTime(int sec);
 };
 
 class Customer : public User
 {
-private:
-//test
-//public:
-    double balance = 0.0;    //用户余额
-
 public:
+    Customer()
+    {
+        this->type = CUSTOMER;
+    }
+    //消费者注销
+    int deleteAccount();
+
     //充值
     int recharge();
-    int setUsrBalance(double num);  //向服务器发送余额更新数据(num:新的余额)
+    int sendRechargeRequest(double amount);     //发送充值请求报文
     //扣费
     int deduct();
+    int sendDeductRequest();    //发送扣费请求(告知服务器可以进行扣费操作)
 
     //提交充电请求
-    int chargeRequest();
-    int sendChargeRequest(int mode, int charge);    //发送充电请求
-
-    //修改充电请求
-    //※复用chargeRequest()?
-    //int changeChargeRequest();
+    int newChargeRequest();
+    int sendChargeRequest();    //发送充电请求报文
+    int getChargeStatus();  //获取充电状态（是否正在充电）
+    //取消充电
+    int cancelCharge();
+    int sendCancelRequest();    //发送取消充电的报文
 
     //查看排队结果
     int getQueueRes();
-    int sendGetQueueRequest();
-    int sendGetWaitingRequest();
+    int sendQueueInfoRequest(); //发送查看排队结果的请求
 
     //(充电结束后)查看充电详情
-    string getChargeInfo();
+    int getChargeInfo();
+    int sendChargeInfoRequest();
 
 };
 
-// 管理员类：请在Admin.h中定义
-// class Admin : public User
-// {
-// private:
-
-// public:
-//     //管理员方法
-// };
+//test
+class Admin : public User
+{
+public:
+    Admin(){
+        this->type = ADMIN;
+    }
+};
 
 #endif
