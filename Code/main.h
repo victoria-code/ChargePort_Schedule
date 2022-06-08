@@ -34,4 +34,20 @@
 #define OPEN_CHARGEPORT 202 //打开所有充电桩
 #define CLOSE_CHARGEPORT 203//关闭所有充电桩
 
+//socket连接用的请求编号
+#define CLOSE 300 //断开连接
+
 using namespace std;
+
+//最大消息长度
+#define INFO_SIZE 500
+
+//报文格式
+struct Info
+{
+	int cmd;	//消息类型
+	char username[20];	//用户名
+	char info[INFO_SIZE];	//具体消息内容
+};
+
+extern struct Info send_info, recv_info;
