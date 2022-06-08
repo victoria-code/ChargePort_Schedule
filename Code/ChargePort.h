@@ -1,3 +1,6 @@
+
+#ifndef CHARGEPORT_H
+#define CHARGEPORT_H
 #include "Car.h"
 #include <vector>
 #include <list>
@@ -5,8 +8,7 @@
 #include "windows.h"
 #include <chrono>
 #include <thread>
-#ifndef CHARGEPORT_H
-#define CHARGEPORT_H
+
 typedef struct //充电报表，for admin
 {
     int SID;            // 充电桩编号

@@ -1,7 +1,7 @@
-#include <ctime>
-#include <string>
 #ifndef CAR_H
 #define CAR_H
+#include <ctime>
+#include <string>
 typedef struct //汽车充电请求
 {
     std::string usrname;  // 用户ID
@@ -16,21 +16,43 @@ typedef struct //汽车充电请求
 
 typedef struct // 充电桩对汽车充电响应
 {
-    CarAsk Ask;          // 包含一个ASK里的信息
-    int SID;             // 充电桩ID
-    int num;             // 汽车在该充电桩的排队号, 0可以直接充电, 为其他数字表示前面有几辆车
-    time_t StChargeTime; // 开始充电时间(当汽车未开始充电时此值无意义)
+    CarAsk Ask;           // 包含一个ASK里的信息
+    int SID;              // 充电桩ID
+    int num;              // 汽车在该充电桩的排队号, 0可以直接充电, 为其他数字表示前面有几辆车
+    time_t StChargeTime;  // 开始充电时间(当汽车未开始充电时此值无意义)
+    std::string queueNum; //排队号(e.g. F1, S2)
+    int waitingNum;       //前车等待数量
 } CarReply;
 
+struct ChargeInfo //用户端查看的充电详情
+{
+    int SID;        //充电桩ID
+    int ChargeMode; //充电模式
+    int time;       //充电时长(秒)
+    double cap;     //充电电量
+    double pay;     //充电费用
+};
 class Car // 车辆
 {
 public:
-    int UID;           // 用户ID
-    int CarID;         // 车辆ID
-    int CarName;       // 车辆名称
-    double BatteryCap; // 电池容量
-    double BatteryNow; // 当前电池电量
-    CarAsk *Ask;       // 为NULL时没有ask
-    CarReply *Reply;   // 为NULL时没有reply
+    int UID;                    // 用户ID
+    int CarID;                  // 车辆ID
+    int CarName;                // 车辆名称
+    double BatteryCap = 0.0;    // 电池容量
+    double BatteryNow = 0.0;    // 当前电池电量
+    CarAsk *Ask = nullptr;      // 为NULL时没有ask
+    CarReply *Reply = nullptr;  // 为NULL时没有reply
+    ChargeInfo *info = nullptr; //充电详情
+    ~Car();
+    // setters
+    void setBatteryCap(double cap);
+    void setAsk(CarAsk *ask);
+    void setReply(CarReply *reply);
+    void setChargeInfo(ChargeInfo *info);
+    // getters
+    double getBatteryCap();
+    CarAsk *getCarAsk();
+    CarReply *getCarReply();
+    ChargeInfo *getChargeInfo();
 };
 #endif
