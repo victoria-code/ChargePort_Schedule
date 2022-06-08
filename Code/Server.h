@@ -1,6 +1,16 @@
+/*服务器端实现*/
 #include "main.h"
+
+//记录用户信息文件名和日志文件名，该文件和main.cpp位于同一目录下
+#define USER_FILENAME "user.txt"
+#define LOG_FILENAME   "log.txt"
+
 class Server{
     public:
+    
+        /*服务器所控制的数据库*/
+        DBupdate database;
+
         /*with chargePort*/    
         int FNum,TNum;  //当前等候区内正在等候的快充/慢充车辆数目 
         int fSeq,tSeq;  //当前等候区内即将进入充电区的车辆编号
@@ -12,7 +22,6 @@ class Server{
         int replyAdmin(string usrname,int cmd,vector<pair<string,string>>info);        //响应管理员客户端请求
 
         /*with user*/
-        vector<string,pair<string,int>>user;     //所有用户信息（用户名,<用户密码，余额》)
         vector<string>wUser;    //记录车辆位于等候区的用户
         vector<string>CUser;    //记录车辆位于充电区的用户
         vector<string>CingUser;  //记录当前正在充电的用户
@@ -26,29 +35,48 @@ class Server{
 };
 
 //数据库更新
-class DBupdata{
+class DBupdate{
     public:
+        /*数据库初始化*/
+        DBupdate::DBupdate();
+
+        /*数据库条目解析*/
+        int entryResolve(usrEntry* uE,string line);//用户条目
+        int entryResolve(logEntry* lE,string line);//日志条目
+
+        //数据库所有用户信息
+        map<string,usrEntry*>usrData;
+
+        //服务日志
+        map<string,logEntry*>logData;
+
         /*用户信息维护*/
-        string usrFileName;//存储用户(顾客、管理员)信息文件的绝对路径名
-        int addUser(usrEntry* data); //新增用户     
-        int usrDataChange(usrEntry* data);//用户信息维护
+        int addUser(usrEntry *data); //新增用户     
+        int usrDataChange(struct usrEntry* data);//用户信息维护
         
         /*充电日志*/
-        string logFileName;//记录历史充电记录文件绝对路径名
-        int addLogEntry();//新增日志条目
+        int addLogEntry(logEntry *data);//新增日志条目
+
+        //数据库更新
+        int update();
+
+        //数据库条目构造
+        string getEntry(usrEntry *data);//用户条目
+        string getEntry(logEntry *data);//日志条目
 };
 
 
 //用户数据库条目
 struct usrEntry{
     string usrname;
-    string passwd;//密码
+    string passwd;//密码sha1值
     string role;//customer 或 admin
-    int balance;
+    int balance;//余额
 };
 
 //日志条目
 struct logEntry{
+    string start_time;//开始充电时间
     string usrname;
     int SID;//充电桩ID
     string queueNum;//排队号码
@@ -66,3 +94,6 @@ struct chargePortData{
     int total;//充电桩开启以来提供的电量
     //待续....
 };
+
+//以字符ch为分隔符字符串拆分
+int split(vector<string>&target,string line,char ch);
