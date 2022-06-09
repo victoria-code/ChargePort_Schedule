@@ -1,44 +1,54 @@
 /*服务器端实现*/
 #include "main.h"
+#include "ChargePort.h"
 
 //记录用户信息文件名和日志文件名，该文件和服务器端main.cpp位于同一目录下
 #define USER_FILENAME "user.txt"
 #define LOG_FILENAME   "log.txt"
+
+//充电桩数目为5，编号为0~1代表快充，编号为2~4代表慢充
+#define CHARGEPORT_NUM 5
 
 class Server{
     public:
 
         /*服务器初始化*/
         Server::Server();
-
+        Server::Server(int PID);/**
         /*服务器下线*/
         Server::~Server();
 
         /*服务器所控制的数据库*/
         DBupdate database;
-        int usrFind(string usrname,usrEntry *res);//用户信息查询
+        int usrFind(string usrname,usrEntry* res);//用户信息查询
         int logFind(string usrname,vector<logEntry*>&res);//用户充电记录查询
-        int usrDataUpdate(bool to_delete,usrEntry *uE);//用户信息更新<新增用户，用户信息改变，用户注销>
+        int usrDataUpdate(bool to_delete,usrEntry* uE);//用户信息更新<新增用户，用户信息改变，用户注销>
 
         /*with chargePort*/    
-        int FNum,TNum;  //当前等候区内正在等候的快充/慢充车辆数目 
+        vector<ChargePort*>cData;//记录充电桩状态信息
+        int FNum,TNum;  //当前等候区内正在等候的快充/慢充车辆排队号码
         int fSeq,tSeq;  //当前等候区内即将进入充电区的车辆编号
-        vector<chargePortData*>cData;//记录充电桩状态信息
-        int spyChargePort();//充电桩信息监控:获取所有充电桩的相关信息
-
+        int failID;//出现故障的充电桩ID
+        time_t failTime;//出现故障的时间
+        int spyChargePort();//充电桩信息监控:获取所有充电桩的相关信息/***
+       
         /*with admin*/        
         int replyAdmin(string usrname,int cmd,vector<pair<string,string>>info);        //响应管理员客户端请求
 
         /*with user*/
-        int logIn(string usrname,string passwd,usrEntry *uE);//登录验证，登录成功则获取用户信息
+        map<string,CarAsk*>WUser;    //记录车辆位于等候区的用户及其请求
+        map<string,CarAsk*>CUser;    //记录车辆位于充电区的用户及其请求
+        map<string,pair<string,int>>queueData;//记录排队号码和前车等待数量
+
+        int logIn(string usrname,string passwd,usrEntry* uE);//登录验证，登录成功则获取用户信息
         int signIn(string usrname,string passwd,string role);//注册认证
         int balanceChange(string usrname,int amount);//充值、扣费
         int Server::deleteUsr(string usrname);//用户注销
-        vector<string>User;    //记录车辆位于等候区的用户
-        vector<string>CUser;    //记录车辆位于充电区的用户
-        vector<string>CingUser;  //记录当前正在充电的用户
-        int replyUser(Info *usrInfo);//响应用户客户端请求
+        int replyUser(Info* usrInfo);//响应用户客户端请求
+        int copeChargeRequest(CarAsk* ask);//处理等候区内用户的充电请求
+        int cancelCharge(string usrname);//处理用户取消充电申请
         string queueNumGenerate(string usrname,int mode);//车辆排队号码生成
+        int getCurWaitNum(string usrname);//获取最新的前车等待数量信息
         int schedule(string usrname,int mode,int amount);//调度策略生成，返回充电桩编号
         int recordBill(string usrname,int mode,int time);//费用计算，返回指定用户需要支付的充电费用,time为实际充电时间
         bool usrDataMaintain(string usrname,vector<pair<string,string>> info);//用户信息维护：info格式：<“被修改属性名”，“修改后属性值”>】
