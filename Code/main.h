@@ -23,11 +23,12 @@
 #define Balance_CHANGE 102 //用户充值 or 扣费·
 #define DELETE_USER 103//用户注销·
 #define CHARGE_REQUEST 104  //提交充电申请
-#define CHANGE_REQUEST 105  //取消充电
+#define CANCEL_REQUEST 105  //取消充电
 #define GET_CHARGE_INFO 106	//充电结束后获取充电详情
 #define QUEUE_NUM_GET 107  //获取排队号码
 #define CHARGE_STAT 108	//充电状态
 #define GET_BILL 110  //获取计费信息
+
 
 //管理员客户端对服务器请求cmd编号（可自加）
 #define SPY_CHARGEPORT  200 //充电桩信息监控
