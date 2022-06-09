@@ -35,7 +35,7 @@ struct ChargeInfo //用户端查看的充电详情
 class Car // 车辆
 {
 public:
-    int UID;                    // 用户ID
+    std::string usrname;        // 用户名
     int CarID;                  // 车辆ID
     int CarName;                // 车辆名称
     double BatteryCap = 0.0;    // 电池容量

@@ -11,27 +11,35 @@
 
 typedef struct //充电报表，for admin
 {
-    int SID;            // 充电桩编号
-    bool IsFastCharge;  //快充还是慢充，快充为1,慢充为0
-    bool OnState;       // 开关状态，true开false关
-    bool IsCharging;    // 为 true 则充电区有车
-    bool IsWaiting;     // 为 true 则等待区有车
-    int ChargeCnt;      // 累计充电次数
-    double ChargeCost;  // 累计总费用。单位/元
-    double ChargeTime;  // 累计充电时长。单位/min
-    double TotalElect;  // 累计总充电量。单位/度
-    double ElectCost;   // 累计充电费用。单位/元
-    double ServiceCost; // 累计服务费用。单位/元
-    time_t TableTime;   // 状态信息生成时间
+    int SID;              // 充电桩编号
+    bool IsFastCharge;    //快充还是慢充，快充为1,慢充为0
+    bool OnState;         // 开关状态，true开false关
+    bool IsCharging;      // 为 true 则充电区有车
+    bool IsWaiting;       // 为 true 则等待区有车
+    int ChargeCnt;        // 累计充电次数
+    double ChargeCost;    // 累计总费用。单位/元
+    long long ChargeTime; // 累计充电时长。单位/min
+    double TotalElect;    // 累计总充电量。单位/度
+    double ElectCost;     // 累计充电费用。单位/元
+    double ServiceCost;   // 累计服务费用。单位/元
+    time_t TableTime;     // 状态信息生成时间
 } CPStatusTable;
+//详单编号、详单生成时间、充电桩编号、充电电量、充电时长、启动时间、停止时间、充电费用、服务费用、总费用
 typedef struct //充电详单,for user
 {
-    double ChargeCost;  // 总费用，单位/元
-    double ServiceCost; // 服务费，单位/元
-    double ElectCost;   // 电费，单位/元
-    double TotalElect;  // 总电量,单位/元
-    int ChargeTime;     // 充电时间，单位/s
-} costTable;
+    int ChargeID;           // 详单编号
+    time_t CreateTableTime; // 详单生成时间
+    int SID;                // 充电桩编号
+    std::string usrname;    // 车辆用户名
+    int CarID;              // 汽车编号
+    time_t StartTime;       // 启动时间
+    time_t End_Time;        // 停止时间
+    double TotalElect;      // 总充电电量,单位/元
+    long long ChargeTime;   // 充电时长，单位/s
+    double ChargeCost;      // 总费用，单位/元
+    double ServiceCost;     // 服务费，单位/元
+    double ElectCost;       // 电费，单位/元
+} CostTable;
 class ChargePort //充电桩
 {
 public:
@@ -48,7 +56,7 @@ public:
     int ChargeCnt;             // 累计充电次数
     double ChargeCost;         // 累计总费用。单位/元
     double ElectCost;          // 累计电费。单位/元
-    double ChargeTime;         // 累计充电时长。单位/min
+    long long ChargeTime;      // 累计充电时长。单位/min
     double TotalElect;         // 累计总充电量。单位/度
     double ServiceCost;        // 累计服务费用。单位/元
 
@@ -70,11 +78,19 @@ struct ChargeThreadPool // 开始充电请求池
     double ElectReq;           // 充电量
     ChargeThreadPool *next;
 };
+struct ChargeTablePool // 开始返回详单请求池
+{
+    bool isAvailable;      //是否有新的请求
+    CostTable ChargeTable; //充电详单
+    ChargeTablePool *next; //链表的下一个位置
+};
+extern ChargeTablePool *ChargeTableHead; // 回复充电详单请求队列头
+extern ChargeTablePool *ChargeTableTail; // 回复充电详单请求队列尾
 /*
 一个充电线程
     充电桩指针，车指针，充电报表指针，指针，充电量，回调函数
 */
-int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq, void (*callback)());
+int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq);
 void ChargeThread();          //一个对线程池循环处理的线程
 void BuildChargePortThread(); // 在服务器开始时调用，启动线程管理，即对充电的模拟
 #endif

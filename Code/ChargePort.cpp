@@ -11,10 +11,14 @@ CPStatusTable NULLStatusTable; //空状态表
 CarReply NULLCarReply;         //空充电请求
 ChargeThreadPool *ChargeHead;  // 开始充电请求队列头
 ChargeThreadPool *ChargeTail;  // 开始充电请求队列尾
+int ChargeTableID = 0;         //充电详单ID
 // StopThreadPool *StopHead;      // 结束充电请求池队列头
 // StopThreadPool *StopTail;      // 结束充电请求池队列尾
 
-int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq, void (*callback)())
+ChargeTablePool *ChargeHead; // 回复充电详单请求队列头
+ChargeTablePool *ChargeTail; // 回复充电详单请求队列尾
+
+int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
 {
     ++ChargePortPtr->ChargeCnt;
     double ElectNow = 0;            // 当前充电量
@@ -59,13 +63,27 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
             break;
         }
     }
-    costTable costtable;
-    costtable.ChargeCost = ElectPrice + ServicePrice;
-    costtable.ElectCost = ElectPrice;
-    costtable.ChargeTime = time(NULL) - start_time;
-    costtable.ServiceCost = ServicePrice;
-    costtable.TotalElect = ElectNow;
+    //更新一张充电表
+    CostTable costtable{++ChargeTableID,
+                        time(NULL),
+                        ChargePortPtr->SID,
+                        CarPtr->usrname,
+                        CarPtr->CarID,
+                        start_time,
+                        time_now,
+                        ElectNow,
+                        time_now - start_time,
+                        ElectPrice + ServicePrice,
+                        ServicePrice,
+                        ElectPrice};
+    ChargeTablePool *nextct = new ChargeTablePool;
+    nextct->isAvailable = false;
+    nextct->ChargeTable = costtable;
+    ChargeTableTail->next = nextct;
+    ChargeTableTail->isAvailable = true;
+    ChargeTableTail = nextct;
     ChargePortPtr->stopCharging = false;
+
     return 0;
 }
 int aaa(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
@@ -83,7 +101,7 @@ void ChargeThread()
 
             // 从线程池里取出并创造一个充电线程
             std::thread CP(ChargeProc, next->ChargePortPtr, next->CarPtr, next->RepPtr, next->ElectReq);
-            CP.detach(); //将该线程分离出去，server关闭时该线程同时结束
+            CP.detach(); //将该线程分离出去，不阻塞，线程运行完结束，server关闭时该线程也会结束
 
             ChargeHead = next;
         }
@@ -107,11 +125,16 @@ void BuildChargePortThread()
     NULLCarReply.Ask.BatteryCap = 0;
     NULLCarReply.Ask.StWaitTime = time(NULL);
 
+    ChargeTableHead = new ChargeTablePool;
+    ChargeTableTail = ChargeTableHead;
+    ChargeTableHead->isAvailable = false;
+
     ChargeHead = new ChargeThreadPool;
     ChargeTail = ChargeHead;
     ChargeHead->isAvailable = false;
-    std::thread Cth(ChargeThread);
-    Cth.detach(); //将该线程分离出去，server关闭时该线程同时结束
+
+    std::thread Cth(ChargeThread); //处理充电的线程
+    Cth.detach();                  //将该线程分离出去，server关闭时该线程同时结束
     /*
         StopHead = new StopThreadPool;
         StopTail = StopHead;
@@ -253,6 +276,7 @@ bool ChargePort::DeleteCar(Car *mycar)
             nextth->ElectReq = this->ChargingCarReply.Ask.ChargeCap;
             ChargeTail->next = nextth;
             ChargeTail->isAvailable = true;
+            ChargeTail = nextth;
         }
         else
         {
