@@ -24,9 +24,10 @@
 #define DELETE_USER 103//用户注销·
 #define CHARGE_REQUEST 104  //提交充电申请
 #define CHANGE_REQUEST 105  //取消充电
-#define GET_QUEUE_RES 106  //获取排队结果
-#define GET_BILL 107  //获取计费信息
-#define GET_CHARGE_INFO 108//充电结束后获取充电详情
+#define GET_CHARGE_INFO 106	//充电结束后获取充电详情
+#define QUEUE_NUM_GET 107  //获取排队号码
+#define CHARGE_STAT 108	//充电状态
+#define GET_BILL 110  //获取计费信息
 
 //管理员客户端对服务器请求cmd编号（可自加）
 #define SPY_CHARGEPORT  200 //充电桩信息监控
@@ -42,12 +43,17 @@ using namespace std;
 //最大消息长度
 #define INFO_SIZE 500
 
-//报文格式
 struct Info
 {
 	int cmd;	//消息类型
-	char username[20];	//用户名
-	char info[INFO_SIZE];	//具体消息内容
+	char UID[20];	//用户名
+	char PWD[10];	//密码
+	int MODE;		//充电模式：0慢1快  复用：用户类型 1Customer  2Admin
+	int Q_NUM;		//排队号码
+	int W_NUM;		//前车等待数量
+	double COST;	//充电费用
+	double BALANCE;	//余额			复用：充电量
+	int REPLY;		//响应报文使用 表示请求结果		复用：充电桩编号
 };
 
 extern struct Info send_info, recv_info;
