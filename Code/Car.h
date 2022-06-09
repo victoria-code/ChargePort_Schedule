@@ -27,11 +27,16 @@ typedef struct // 充电桩对汽车充电响应
 
 struct ChargeInfo //用户端查看的充电详情
 {
-    int SID;        //充电桩ID
-    int ChargeMode; //充电模式
-    int time;       //充电时长(秒)
-    double cap;     //充电电量
-    double pay;     //充电费用
+    std::string infoID; //详单编号
+    time_t genTime;     //详单生成时间
+    int SID;            //充电桩编号
+    int ChargeMode;     //充电模式
+    int time;           //充电时长(秒)
+    time_t start;       //启动时间
+    time_t end;         //停止时间
+    double cap;         //充电电量
+    double chargeFee;   //充电费用
+    double serviceFee;  //服务费用
 };
 class Car // 车辆
 {
