@@ -274,19 +274,33 @@ int Customer::recharge()
         break;
     }
     //向服务器发送充值请求
-    int suc = sendRechargeRequest(amount);
+    //int suc = sendRechargeRequest(amount);
+    int suc = sendUpdateBalanceRequest(amount);
     if (suc) //充值成功，更新本地数据
         this->balance += amount;
     else cout<<"充值失败，请稍后再试"<<endl;
     return suc;
 }
 
-//发送充值请求
-// amount:增量
-int Customer::sendRechargeRequest(double amount)
+/*
+发送更新余额请求
+socket
+*/
+int Customer::sendUpdateBalanceRequest(double add)
 {
-    return 1; // test
+    int suc = 0;
+    if(fabs(add) <= 1e-15)  //扣费
+    {
+        
+    }
+    else    //充值
+    {
+
+    }
+    return suc;
 }
+
+
 
 /*
 扣费
@@ -312,19 +326,11 @@ int Customer::deduct()
     }
     if (suc)
     {
-        suc = sendDeductRequest(); //告知服务器可以进行扣费操作
+        suc = sendUpdateBalanceRequest();   //告知服务器可以进行扣费操作
         if (suc)                   //扣费成功，更新本地余额信息
             this->balance -= pay;
     }
     return suc;
-}
-/*
-发送扣费请求(告知服务器可以进行扣费操作)
-socket
-*/
-int Customer::sendDeductRequest()
-{
-    return 1; // test
 }
 
 /*
