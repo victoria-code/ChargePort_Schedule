@@ -351,7 +351,8 @@ int Customer::newChargeRequest()
             cout << "输入无效，请重新输入电池容量: ";
         const char *s = kwh_str.c_str();
         double kwh = atof(s);
-        this->car->setBatteryCap(kwh); //设置电池容量
+        //this->car->setBatteryCap(kwh); //设置电池容量
+        this->car->BatteryCap = kwh;
     }
 
     int status = getChargeStatus(); //向服务器获取：是否正在充电
@@ -387,7 +388,8 @@ int Customer::newChargeRequest()
     }
     charge = charge_n[id[0] - '0'];
     //请求充电量超出电池容量，则自动设置为电池容量（向下取整）
-    double cap = this->car->getBatteryCap();
+    //double cap = this->car->getBatteryCap();
+    double cap = this->car->BatteryCap;
     if (charge > cap)
     {
         cout << "您选择的充电量超出了车辆电池容量，系统已将其自动调整为车辆电池容量: " << cap << "kWh\n";
@@ -396,10 +398,14 @@ int Customer::newChargeRequest()
 
     //设置充电请求
     CarAsk *ask = new CarAsk;
-    ask->BatteryCap = this->car->getBatteryCap();
+    //ask->BatteryCap = this->car->getBatteryCap();
+    ask->BatteryCap = this->car->BatteryCap;
+    ask->BatteryNow = this->car->BatteryNow;
     ask->IsFastCharge = (mode == FAST ? true : false);
-    ask->ChargeCap = charge;
-    this->car->setAsk(ask);
+    //ask->ChargeCap = charge;
+    ask->RequestCharge = charge;
+    //this->car->setAsk(ask);
+    this->car->Ask = ask;
 
     //向服务器提交充电请求
     int suc = 0;
@@ -474,7 +480,8 @@ int Customer::getQueueRes()
     suc = sendQueueInfoRequest();
     if (suc)
     {
-        CarReply *reply = this->car->getCarReply();
+        //CarReply *reply = this->car->getCarReply();
+        CarReply *reply = this->car->Reply;
         cout << "您当前的排队号码为: " << reply->queueNum << ", 前方还有" << reply->waitingNum << "辆车在等待" << endl;
     }
     else cout<<"获取排队信息失败，请稍后再试"<<endl;
@@ -499,7 +506,8 @@ int Customer::getChargeInfo()
     suc = sendChargeInfoRequest(); //填充this->car->info
     if (suc)
     {
-        ChargeInfo *info = this->car->getChargeInfo();
+        //ChargeInfo *info = this->car->getChargeInfo();
+        ChargeInfo *info = this->car->info;
         cout << "----------充电详单----------" << endl;
         cout << "充电桩ID: " << info->SID << "\t充电模式: " << info->ChargeMode
              << "\n充电时长: " << getTime(info->time) << "\t充电电量: " << info->cap << "度"
