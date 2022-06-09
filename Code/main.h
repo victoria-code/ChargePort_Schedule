@@ -16,8 +16,8 @@
 #define SLOW_POWER 7    //慢充功率（单位：度/小时）
 
 //充电模式mode
-#define FAST 0
-#define SLOW 1
+#define FAST 1
+#define SLOW 0
 
 //用户客户端对服务器请求cmd编号（可自加）
 #define LOG_IN  100  //登录验证.
