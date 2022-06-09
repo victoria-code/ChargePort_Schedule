@@ -19,6 +19,7 @@ typedef struct // 充电桩对汽车充电响应
     CarAsk Ask;           // 包含一个ASK里的信息
     int SID;              // 充电桩ID
     int num;              // 汽车在该充电桩的排队号, 0可以直接充电, 为其他数字表示前面有几辆车
+    char MODE;	// F or S
     time_t StChargeTime;  // 开始充电时间(当汽车未开始充电时此值无意义)
     std::string queueNum; //排队号(e.g. F1, S2)
     int waitingNum;       //前车等待数量
