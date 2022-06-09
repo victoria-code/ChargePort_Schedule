@@ -65,10 +65,11 @@ public:
 
     //充值
     int recharge();
-    int sendRechargeRequest(double amount);     //发送充值请求报文
+    //int sendRechargeRequest(double amount);     //发送充值请求报文
     //扣费
     int deduct();
-    int sendDeductRequest();    //发送扣费请求(告知服务器可以进行扣费操作)
+    //int sendDeductRequest();    //发送扣费请求(告知服务器可以进行扣费操作)
+    int sendUpdateBalanceRequest(double add = 0.0); //发送更新余额的报文
 
     //提交充电请求
     int newChargeRequest();
