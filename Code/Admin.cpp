@@ -95,7 +95,7 @@ bool Admin::closeChargePort(int SID){
 }
 
 //查询充电桩信息(充电桩状态)
-string Admin::getChargePortInfo(){
+bool Admin::getChargePortInfo(){
     int suc = 0;
     cout << "==========查询充电桩信息=========" << endl;
     cout << "请选择要查询的充电桩" << endl;
@@ -122,22 +122,73 @@ string Admin::getChargePortInfo(){
     }
 
     //和服务器发送请求 todo
-    suc = sendReportRequest(usrname, CLOSE_CHARGEPORT, info);
+    suc = sendReportRequest(usrname, SPY_CHARGEPORT, info);
+    if (suc){
+        printRecv(SPY_CHARGEPORT);
+        return true;
+    }
+    else cout << "信息查询失败，请稍后重试" << endl;
+    return false;
     //获得信息和输出
 }
 //查询等候服务车辆信息
-string Admin::getAllWaitingCarInfo(){
+bool Admin::getAllWaitingCarInfo(){
+    // int suc = 0;
+    // cout << "==========查询等候服务车辆信息=========" << endl;
+    // cout << "请选择要查询的充电桩" << endl;
+    // string choice[] = {"充电桩1","充电桩2","充电桩3","充电桩4","所有充电桩"};
+    // printChoice(choice,5);
+    // string id_str;
+    // while (getline(cin, id_str), !isLegalChoice(id_str, 5))
+    // {
+    //     cout << "请输入有效选项: ";
+    //     printChoice(choice, 5);
+    // }
+    // int id = id_str[0] - '0';
+    // string info;
+    // switch(id){
+    //     case 1:
+    //     case 2:
+    //     case 3:
+    //     case 4:
+    //         info = id_str;
+    //         break;
+    //     case 5:
+    //         info = "all";
+    //         break;
+    // }
 
+    // //和服务器发送请求 todo
+    // suc = sendReportRequest(usrname, SPY_CHARGEPORT, info);
+    // if (suc){
+    //     printRecv(SPY_CHARGEPORT);
+    //     return true;
+    // }
+    // else cout << "信息查询失败，请稍后重试" << endl;
+    // return false;
+    //获得信息和输出
 }
 
 //发送服务器请求
-//1表示请求成功 0表示请求失败 2表示充电桩已开启 3表示充电桩已关闭
+//1表示请求成功 0表示请求失败 2表示充电桩已开启 3表示充电桩已关闭 返回内容存在于recv_info里
 //socket todo
 int Admin::sendRequest(string usrname,int cmd,string request){
+    send_info.cmd = cmd;
+    strcpy(send_info.username, usrname.c_str());
+    strcpy(send_info.info, request.c_str());
+    //client_sock.Send(send_info);
+    //client_sock.Send(recv_info);
+    //return recv_info.REPLY;
 }
 
-//发送服务器请求
-//返回查询信息
-//socket todo
-int Admin::sendReportRequest(string usrname,int cmd,string request){
+int Admin::printRecv(int cmd){
+    string recv(recv_info.info);
+    //todo 确认recv的内容
+    switch(cmd){
+        case SPY_CHARGEPORT:
+            //todo 与服务器协商返回内容
+        case DATA_STATISTICS:
+            //todo 与服务器协商返回内容
+    }
+
 }
