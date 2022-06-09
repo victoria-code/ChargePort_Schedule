@@ -1,18 +1,16 @@
 #include "User.h"
 #include "main.h"
-#include "TSocket.h"    //socket
+#include "TSocket.h"	//socket
 #include "ChargePort.h" //充电详单
 
-
 extern TSocket client_sock;
-
 
 /*
 用户登录
 服务器：检查用户名和密码
 返回：登录成功/失败(1/0)
 */
-//int User::logIN()
+// int User::logIN()
 //{
 //	int suc = 0;
 //	cout << "==========登录界面=========" << endl;
@@ -74,7 +72,7 @@ extern TSocket client_sock;
 //
 //	cout << "登录成功！" << endl;
 //	return suc;
-//}
+// }
 /*
 清空数据 用于退出登录或注销
 */
@@ -108,7 +106,7 @@ Car *Customer::getCarInfo()
 发送登录请求
 socket
 */
-//int User::sendLogInRequest(string usrname, string password)
+// int User::sendLogInRequest(string usrname, string password)
 //{
 //	return 1; // test
 //
@@ -121,23 +119,23 @@ socket
 //
 //	// //接收服务器发回的响应报文
 //	// client_sock.Recv(recv_info);
-//	/*while(strcmp(recv_info.UID,this->usrname.c_str())) 
+//	/*while(strcmp(recv_info.UID,this->usrname.c_str()))
 //		client_sock.Recv(recv_info);*/	//确认是否是发给自己的
 //
 //	if (recv_info.MODE == 1)
 //	{
-//		
+//
 //	}
 //
 //	// return recv_info.REPLY;   //test
-//}
+// }
 
 /*
 用户注册
 服务器：检查用户名和密码，新增用户数据
 返回：注册成功/失败(1/0)
 */
-//int User::signUp()
+// int User::signUp()
 //{
 //	cout << "==========注册界面=========" << endl;
 //	//获取用户输入的用户名和密码
@@ -174,13 +172,13 @@ socket
 //	cout << "注册成功！" << endl;
 //	system("pause");
 //	return suc;	//注册成功后返回主界面 暂不登录
-//}
+// }
 
 /*
 发送注册请求
 socket
 */
-//int User::sendSignUpRequest(string usrname, string password, int type)
+// int User::sendSignUpRequest(string usrname, string password, int type)
 //{
 //	return 1; // test
 //
@@ -198,7 +196,7 @@ socket
 //	// this->usrname = recv_info.UID;
 //
 //	// return recv_info.REPLY;   //test
-//}
+// }
 
 // int User::deleteAccount() //子类实现
 /*
@@ -237,7 +235,7 @@ int Customer::deleteAccount()
 	if (status)
 	{ //如果正在充电
 		suc = 0;
-		string choice[] = { "等待结束", "强行停止" };
+		string choice[] = {"等待结束", "强行停止"};
 		cout << "您有充电任务正在进行，是否等待充电结束? ";
 		printChoice(choice, 2);
 		string id;
@@ -261,7 +259,8 @@ int Customer::deleteAccount()
 		cout << "注销成功！" << endl;
 		this->clearData();
 	}
-	else cout << "注销失败，请稍后再试" << endl;
+	else
+		cout << "注销失败，请稍后再试" << endl;
 
 	return suc;
 }
@@ -319,7 +318,6 @@ void Customer::showMenu()
 	}
 }
 
-
 /*
 充值
 服务器：提供用户余额信息，更新用户余额
@@ -329,7 +327,7 @@ int Customer::recharge()
 {
 	cout << "==========充值界面=========" << endl;
 	cout << "当前账户余额: " << this->balance << endl;
-	string choice[] = { "20", "50", "100", "200", "自定义" };
+	string choice[] = {"20", "50", "100", "200", "自定义"};
 	cout << "请选择您要充值的金额(单位：元): ";
 	printChoice(choice, 5);
 
@@ -371,7 +369,8 @@ int Customer::recharge()
 	int suc = sendUpdateBalanceRequest(this->balance + amount);
 	if (suc) //充值成功，更新本地数据
 		this->balance += amount;
-	else cout << "充值失败，请稍后再试" << endl;
+	else
+		cout << "充值失败，请稍后再试" << endl;
 	return suc;
 }
 
@@ -417,7 +416,7 @@ int Customer::deduct()
 	if (suc)
 	{
 		suc = sendUpdateBalanceRequest(this->balance - pay); //告知服务器可以进行扣费操作
-		if (suc)                   //扣费成功，更新本地余额信息
+		if (suc)											 //扣费成功，更新本地余额信息
 			this->balance -= pay;
 	}
 	return suc;
@@ -441,7 +440,8 @@ int Customer::newChargeRequest()
 			cout << "输入无效，请重新输入电池容量: ";
 		const char *s = kwh_str.c_str();
 		double kwh = atof(s);
-		this->car->setBatteryCap(kwh); //设置电池容量
+		// this->car->setBatteryCap(kwh); //设置电池容量
+		this->car->BatteryCap = kwh;
 	}
 
 	int status = getChargeStatus(); //向服务器获取：是否正在充电
@@ -454,7 +454,7 @@ int Customer::newChargeRequest()
 
 	//获取用户输入的充电模式和充电量
 	int mode, charge; // charge: 充电量
-	string choice1[] = { "快充", "慢充" };
+	string choice1[] = {"快充", "慢充"};
 	cout << "请选择充电模式: ";
 	printChoice(choice1, 2);
 	string id;
@@ -466,8 +466,8 @@ int Customer::newChargeRequest()
 	mode = (id == "1" ? FAST : SLOW);
 
 	//市面上主流电动汽车的电池容量为15~60kWh
-	string choice2[] = { "10", "20", "30", "40", "50", "60" };
-	int charge_n[] = { 0, 10, 20, 30, 40, 50, 60 };
+	string choice2[] = {"10", "20", "30", "40", "50", "60"};
+	int charge_n[] = {0, 10, 20, 30, 40, 50, 60};
 	cout << "请输入充电量(单位：度): ";
 	printChoice(choice2, 6);
 	while (getline(cin, id), !isLegalChoice(id, 6))
@@ -486,22 +486,23 @@ int Customer::newChargeRequest()
 
 	//设置充电请求
 	CarAsk *ask = new CarAsk;
-	//ask->BatteryCap = this->car->getBatteryCap();
+	// ask->BatteryCap = this->car->getBatteryCap();
 	ask->BatteryCap = this->car->BatteryCap;
-	//ask->BatteryNow = this->car->BatteryNow;
+	// ask->BatteryNow = this->car->BatteryNow;
 	ask->IsFastCharge = (mode == FAST ? true : false);
-	//ask->RequestCharge = charge;
+	// ask->RequestCharge = charge;
 	this->car->Ask = ask;
 
 	//向服务器提交充电请求
 	int suc = 0;
 	suc = sendChargeRequest(); //直接读取this->car->Ask的内容
-	if (suc)                   //查看排队结果
+	if (suc)				   //查看排队结果
 	{
 		cout << "提交充电请求成功，正在获取排队信息..." << endl;
 		cout << "您当前的排队号码为: " << this->car->Reply->queueNum << ", 前方还有" << this->car->Reply->waitingNum << "辆车在等待" << endl;
 	}
-	else cout << "提交充电请求失败，请稍后再试" << endl;
+	else
+		cout << "提交充电请求失败，请稍后再试" << endl;
 
 	return suc;
 }
@@ -519,7 +520,7 @@ int Customer::getChargeStatus()
 		client_sock.Recv(recv_info);
 
 	// 1表示正在充电，0表示未正在充电
-	//return 0; // test
+	// return 0; // test
 	return recv_info.REPLY;
 }
 /*
@@ -531,29 +532,30 @@ int Customer::sendChargeRequest()
 {
 	return 1; // test
 
-	send_info.cmd = CHARGE_REQUEST;//此处未记录电池容量 若server需要再加
+	send_info.cmd = CHARGE_REQUEST; //此处未记录电池容量 若server需要再加
 	strcpy_s(send_info.UID, this->usrname.c_str());
-	send_info.MODE = (this->car->getCarAsk()->IsFastCharge == 1 ? 1 : 0);
-	send_info.BALANCE = this->car->getCarAsk()->ChargeCap;	//BANLANCE复用为充电量
+	// send_info.MODE = (this->car->getCarAsk()->IsFastCharge == 1 ? 1 : 0);
+	// send_info.BALANCE = this->car->getCarAsk()->ChargeCap;	//BANLANCE复用为充电量
+	send_info.MODE = this->car->Ask->IsFastCharge == 1 ? 1 : 0;
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
-	while(strcmp(recv_info.UID,this->usrname.c_str()))
+	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
 
 	//设置排队结果
 	CarReply *reply = new CarReply;
-	reply->SID = recv_info.REPLY;	//将REPLY复用为充电桩编号
+	reply->SID = recv_info.REPLY; //将REPLY复用为充电桩编号
 	reply->num = recv_info.Q_NUM;
 	reply->waitingNum = recv_info.W_NUM;
 	reply->MODE = recv_info.MODE == 1 ? 'F' : 'S';
 
-	char QNum[10];	//F1000
+	char QNum[10]; // F1000
 	QNum[0] = (recv_info.MODE == 1 ? 'F' : 'S');
 	_itoa_s(reply->num, QNum + 1, 9, 10);
 	reply->queueNum = QNum;
 	this->car->Reply = reply;
-	//return recv_info.REPLY;
+	// return recv_info.REPLY;
 }
 
 /*
@@ -562,7 +564,8 @@ int Customer::sendChargeRequest()
 // int Customer::cancelChargeRequest()
 int Customer::cancelCharge()
 {
-	if (this->car->getCarReply() == nullptr)
+	// if (this->car->getCarReply() == nullptr)
+	if (this->car->Reply == nullptr)
 	{
 		cout << "您当前还未发出充电申请！" << endl;
 		return -1;
@@ -581,7 +584,8 @@ int Customer::cancelCharge()
 		suc = sendCancelRequest();
 		if (suc)
 			cout << "取消成功！" << endl;
-		else cout << "取消充电失败，请稍后再试" << endl;
+		else
+			cout << "取消充电失败，请稍后再试" << endl;
 	}
 	return suc;
 }
@@ -600,10 +604,10 @@ int Customer::sendCancelRequest()
 	client_sock.Recv(recv_info);
 	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
-	
-	//clearASK
 
-	//return recv_info.REPLY;
+	// clearASK
+
+	// return recv_info.REPLY;
 }
 
 /*
@@ -612,7 +616,8 @@ int Customer::sendCancelRequest()
 */
 int Customer::getQueueRes()
 {
-	if (this->car->getCarReply() == nullptr)
+	// if (this->car->getCarReply() == nullptr)
+	if (this->car->Reply == nullptr)
 	{
 		cout << "您当前还未发出充电申请，请申请充电后再查看排队结果！" << endl;
 		return -1;
@@ -620,7 +625,8 @@ int Customer::getQueueRes()
 
 	cout << "==========排队信息界面=========" << endl;
 	int q = sendQueueInfoRequest();
-	CarReply *reply = this->car->getCarReply();
+	// CarReply *reply = this->car->getCarReply();
+	CarReply *reply = this->car->Reply;
 	cout << "您当前的排队号码为: " << reply->queueNum << ", 前方还有" << reply->waitingNum << "辆车在等待" << endl;
 	return 1;
 }
@@ -638,8 +644,8 @@ int Customer::sendQueueInfoRequest()
 
 	//设置排队结果 此处只设置一项排队号码 因为其余已在申请充电时设置
 	this->car->Reply->num = recv_info.Q_NUM;
-//	//填充this->car->Reply
-	return 0;   //test
+	//	//填充this->car->Reply
+	return 0; // test
 }
 
 /*
@@ -653,14 +659,31 @@ int Customer::getChargeInfo()
 	suc = sendChargeInfoRequest(); //填充this->car->info
 	if (suc)
 	{
-		ChargeInfo *info = this->car->getChargeInfo();
+		ChargeInfo *info = this->car->info;
+		/*
+		std::string infoID;  //详单编号
+		time_t genTime; //详单生成时间
+		int SID;        //充电桩编号
+		int ChargeMode; //充电模式
+		int time;       //充电时长(秒)
+		time_t start;   //启动时间
+		time_t end;     //停止时间
+		double cap;     //充电电量
+		double chargeFee;     //充电费用
+		double serviceFee;    //服务费用
+		*/
 		cout << "----------充电详单----------" << endl;
-		cout << "充电桩ID: " << info->SID << "\t充电模式: " << info->ChargeMode
-			<< "\n充电时长: " << getTime(info->time) << "\t充电电量: " << info->cap << "度"
-			<< "\n充电费用: " << info->pay << "元" << endl;
+		cout << "详单编号: " << info->infoID << "\t生成时间: " << info->genTime
+			 << "\n充电桩ID: " << info->SID << "\t充电模式: " << info->ChargeMode
+			 << "\n启动时间: " << ctime(&(info->start)) << "\t停止时间: " << ctime(&(info->end))
+			 << "\n充电时长: " << getTime(info->end - info->start) << "\t充电电量: " << info->cap << "度"
+			 << "\n充电费用: " << info->chargeFee << "元"
+			 << "\t服务费用: " << info->serviceFee << "元" 
+			 << "\n总费用: "<< info->chargeFee + info->serviceFee <<endl;
 		cout << "---------------------------" << endl;
 	}
-	else cout << "获取充电详情失败，请稍后再试" << endl;
+	else
+		cout << "获取充电详情失败，请稍后再试" << endl;
 	return suc;
 }
 /*
@@ -669,26 +692,32 @@ socket
 */
 int Customer::sendChargeInfoRequest()
 {
-	return 0;   //test
+	return 0; // test
 
 	send_info.cmd = GET_CHARGE_INFO;
 	strcpy_s(send_info.UID, this->usrname.c_str());
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
-	while(strcmp(recv_info.UID,this->usrname.c_str()))
+	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
 
 	//解析报文 设置充电详情
 	ChargeInfo *info = new ChargeInfo;
-	info->SID = recv_info.REPLY;	//REPLY复用：充电桩编号
-	info->ChargeMode = recv_info.MODE;
-	info->time = recv_info.Q_NUM;	//Q_NUM复用：充电时长
-	info->cap = recv_info.BALANCE;	//BANLANCE复用：充电量
-	info->pay = recv_info.COST;
+	//详单编号
+	//详单生成时间
+	info->SID = recv_info.REPLY; // REPLY复用：充电桩编号
+	info->ChargeMode = recv_info.MODE;	//充电模式
+	info->time = recv_info.Q_NUM;  // Q_NUM复用：充电时长
+	//启动时间
+	//停止时间
+	info->cap = recv_info.BALANCE; // BANLANCE复用：充电量
+	// info->pay = recv_info.COST;
+	//充电费用
+	//服务费用
 
 	this->car->info = info;
-	//this->car->setChargeInfo(info);
+	// this->car->setChargeInfo(info);
 }
 
 /*------Utils------*/
