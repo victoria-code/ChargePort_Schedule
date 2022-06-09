@@ -31,5 +31,5 @@ public:
 
 
 //客户端为client_sock  服务器端改为server_sock即可
-extern TSocket client_sock; 
+//extern TSocket client_sock; 
 

@@ -6,8 +6,19 @@
 
 //服务器初始化
 Server::Server(){
-    //获取充电桩当前信息
+    //数据库自动同步到本地
 
+    //启动并初始化充电桩
+    for(int i=0;i<CHARGEPORT_NUM;i++){
+        //快充
+        if(i<2)
+            cData[i]=new ChargePort(i,true,true);
+        else
+            cData[i]=new ChargePort(i,false,true);
+    }
+    //初始化排队信息
+    FNum=TNum=0;
+    fSeq=tSeq=0;
 }
 
 //服务器下线前同步数据库
@@ -18,7 +29,7 @@ Server::~Server(){
 /*database Interface*/
 
 //用户信息查询
-int Server::usrFind(string usrname,usrEntry *res){
+int Server::usrFind(string usrname,usrEntry* res){
     auto it=this->database.usrData.find(usrname);
     //用户不存在
     if(it==this->database.usrData.end()){
@@ -41,7 +52,7 @@ int Server::logFind(string usrname,vector<logEntry*>&res){
 }
 
 //用户信息更新<新增用户，用户信息改变，用户注销>
-int Server::usrDataUpdate(bool to_delete,usrEntry *uE){
+int Server::usrDataUpdate(bool to_delete,usrEntry* uE){
     auto it=this->database.usrData.find(uE->usrname);
 
     //注销
@@ -145,12 +156,101 @@ int Server::deleteUsr(string usrname){
     return Server::usrDataUpdate(true,uE);
 }
 
+//cmd:104 处理等候区内车辆的充电申请
+int Server::copeChargeRequest(CarAsk* ask){
+    //充电区内无法提交、修改用户请求
+    if(CUser.find(ask->usrname)!=CUser.end()){
+        cout<<"车辆当前位于充电区，无法提交充电请求！"<<endl;
+        return -1;
+    }
+    else{
+        //若用户第一次提交充电请求
+        if(WUser.find(ask->usrname)==WUser.end()){
+            //若等候区已满则无法处理请求
+            if(WUser.size()>6){
+                cout<<"当前等候区已满，如法处理新的用户请求！"<<endl;
+                return -2;
+            }
+            //否则生成排队号码并记录前车等待数目
+            else{
+                string qNum=queueNumGenerate(ask->usrname,ask->IsFastCharge);
+                this->queueData[ask->usrname].first=qNum;
+                int curWait=getCurWaitNum(ask->usrname);
+                this->queueData[ask->usrname].second=curWait;
+                WUser[ask->usrname]=ask;
+                cout<<"请求成功！"<<"\n"<<"当前排队号码："<<qNum<<"\n"<<"本模式下前车等待数量： "<<curWait<<endl;
+                return 0;
+            }
+        }
+        //若用户提交过请求则覆盖原有请求
+        else{
+            queueData.erase(ask->usrname);
+            //重新生成排队号码和前车等待数量
+            string qNum=queueNumGenerate(ask->usrname,ask->IsFastCharge);
+            this->queueData[ask->usrname].first=qNum;
+            int curWait=getCurWaitNum(ask->usrname);
+            this->queueData[ask->usrname].second=curWait;
+            WUser[ask->usrname]=ask;
+            cout<<"请求成功！"<<"\n"<<"当前排队号码："<<qNum<<"\n"<<"本模式下前车等待数量： "<<curWait<<endl;
+            return 0;
+        }
+    }
+}
 
-string queueNumGenerate(string usrname,int mode);//车辆排队号码生成
+//cmd:105 取消充电
+int Server::cancelCharge(string usrname){
+    
+}
+
+//车辆排队号码生成
+string Server::queueNumGenerate(string usrname,int mode){
+    string qNum;
+    if(mode==FAST)
+        qNum="F"+to_string(++FNum);
+    else
+        qNum="T"+to_string(++TNum);
+    queueData[usrname]=make_pair(qNum,-1);
+}
+
+//获取本模式下最新的前车等待数量信息
+int Server::getCurWaitNum(string usrname){
+    int num=0;
+    auto ask=this->queueData.find(usrname);
+    int qNum=stoi(ask->second.first.substr(1));//排队号码
+
+    //如果车辆位于等候区
+    auto w=WUser.find(usrname);
+    if(w!=WUser.end()){
+        if(w->second->IsFastCharge){
+            num+=qNum-this->fSeq;
+            num+=cData[0]->IsWaiting+cData[1]->IsWaiting;
+        }
+        else{
+            num+=qNum-this->tSeq;
+            num+=cData[2]->IsWaiting+cData[3]->IsWaiting+cData[4]->IsWaiting;        
+        }
+        return num;
+    }
+
+    //如果车辆位于充电区
+    if(CUser.find(usrname)!=CUser.end()){
+        for(int i=0;i<CHARGEPORT_NUM;i++){
+            //正在充电则无需等待
+             if(cData[i]->IsCharging&&cData[i]->ChargingCar->usrname==usrname)
+                return 0;     
+        }
+        //否则需要等待前一辆车充电完毕
+        return 1;
+    }
+    cout<<"用户当前既不在等候区，也不在充电区！"<<endl;
+    return -1;
+}
+
+//cmd:107
+
 int schedule(string usrname,int mode,int amount);//调度策略生成，返回充电桩编号
 int recordBill(string usrname,int mode,int time);//费用计算，返回指定用户需要支付的充电费用,time为实际充电时间
 bool usrDataMaintain(string usrname,vector<pair<string,string>> info);//用户信息维护：info格式：<“被修改属性名”，“修改后属性值”>】
-
 
 
 /*DBupdate类实现*/
@@ -238,7 +338,7 @@ int entryResolve(logEntry* lE,string line){
 }
 
 //新增用户信息
-int DBupdate::addUser(usrEntry *data){
+int DBupdate::addUser(usrEntry* data){
     if(data!=nullptr){
         this->usrData.insert(make_pair(data->usrname,data));
         return 0;
@@ -282,7 +382,7 @@ int DBupdate::update(){
 }
 
 //构造条目(用户条目)
-string DBupdate::getEntry(usrEntry *data){
+string DBupdate::getEntry(usrEntry* data){
     string res=data->usrname;
     res+=" ";
     res+=data->passwd;
@@ -294,7 +394,7 @@ string DBupdate::getEntry(usrEntry *data){
 }
 
 //构造条目（日志条目）
-string DBupdate::getEntry(logEntry *data){
+string DBupdate::getEntry(logEntry* data){
     string res=data->start_time;
     res+=" ";
     res+=data->usrname;
