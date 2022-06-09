@@ -143,16 +143,23 @@ void BuildChargePortThread()
         Sth.detach();
     */
 }
-ChargePort::ChargePort(int CPID, bool fast, bool on)
+ChargePort::ChargePort(int CPID, bool fast, bool on, int CCnt = 0, double CCost = 0, double ECost = 0, long long CTime = 0, double TElect = 0, double SCost = 0)
 {
     this->SID = CPID;
     this->IsFastCharge = fast;
     this->OnState = on;
     IsCharging = IsWaiting = false;
     ChargeCnt = 0;
-    ChargeCost = ChargeTime = TotalElect = ServiceCost = ElectCost = 0;
     ChargingCarReply = NULLCarReply;
     WaitingCarReply = NULLCarReply;
+    ChargingCar = NULL;
+    WaitingCar = NULL;
+    ChargeCnt = CCnt;
+    ChargeCost = CCost;
+    ElectCost = ECost;
+    ChargeTime = CTime;
+    TotalElect = TElect;
+    ServiceCost = SCost;
 }
 bool ChargePort::on()
 {

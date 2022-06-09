@@ -37,12 +37,13 @@ class Car // 车辆
 public:
     std::string usrname;        // 用户名
     int CarID;                  // 车辆ID
-    int CarName;                // 车辆名称
+    std::string CarName;        // 车辆名称
     double BatteryCap = 0.0;    // 电池容量
     double BatteryNow = 0.0;    // 当前电池电量
     CarAsk *Ask = nullptr;      // 为NULL时没有ask
     CarReply *Reply = nullptr;  // 为NULL时没有reply
     ChargeInfo *info = nullptr; //充电详情
+    Car(std::string uname = "", int CID = 0, std::string Cname = "", double BCap = 0.0, double BNow = 0.0);
     ~Car();
 };
 #endif
