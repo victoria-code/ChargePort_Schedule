@@ -44,15 +44,5 @@ public:
     CarReply *Reply = nullptr;  // 为NULL时没有reply
     ChargeInfo *info = nullptr; //充电详情
     ~Car();
-    // setters
-    void setBatteryCap(double cap);
-    void setAsk(CarAsk *ask);
-    void setReply(CarReply *reply);
-    void setChargeInfo(ChargeInfo *info);
-    // getters
-    double getBatteryCap();
-    CarAsk *getCarAsk();
-    CarReply *getCarReply();
-    ChargeInfo *getChargeInfo();
 };
 #endif
