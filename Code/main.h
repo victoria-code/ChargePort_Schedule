@@ -20,16 +20,13 @@
 //用户客户端对服务器请求cmd编号（可自加）
 #define LOG_IN  100  //登录验证.
 #define SIGN_UP 101  //注册认证·
-#define RECHARGE 102 //用户充值 or 扣费·
+#define Balance_CHANGE 102 //用户充值 or 扣费·
 #define DELETE_USER 103//用户注销·
 #define CHARGE_REQUEST 104  //提交充电申请
 #define CHANGE_REQUEST 105  //取消充电
-#define QUEUE_NUM_GET 106  //车辆排队号码生成
-#define SCHEDULE_GET 107  //调度策略生成
-#define GET_QUEUE_RES 108  //获取排队结果
-#define END_CHARGE 109  //提前结束充电
-#define GET_BILL 110  //获取计费信息
-
+#define GET_QUEUE_RES 106  //获取排队结果
+#define GET_BILL 107  //获取计费信息
+#define GET_CHARGE_INFO 108//充电结束后获取充电详情
 
 //管理员客户端对服务器请求cmd编号（可自加）
 #define SPY_CHARGEPORT  200 //充电桩信息监控
