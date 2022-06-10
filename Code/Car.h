@@ -2,15 +2,16 @@
 #define CAR_H
 #include <ctime>
 #include <string>
+#include "ChargePort.h" //充电详单
+
 typedef struct //汽车充电请求
 {
     std::string usrname;  // 用户ID
     int CarID;            // 车辆ID
-    int ChargeCap;        // 请求充电量
+    int ChargeCap;        // 请求充电量(充电桩使用)
     bool IsFastCharge;    // 快充还是慢充，快充为1
     double BatteryCap;    // 电池容量
     double BatteryNow;    // 当前电池电量
-    double RequestCharge; // 请求充电量
     time_t StWaitTime;    // 开始等待时间
 } CarAsk;
 
@@ -25,19 +26,6 @@ typedef struct // 充电桩对汽车充电响应
     int waitingNum;       //前车等待数量
 } CarReply;
 
-struct ChargeInfo //用户端查看的充电详情
-{
-    std::string infoID; //详单编号
-    time_t genTime;     //详单生成时间
-    int SID;            //充电桩编号
-    int ChargeMode;     //充电模式
-    int time;           //充电时长(秒)
-    time_t start;       //启动时间
-    time_t end;         //停止时间
-    double cap;         //充电电量
-    double chargeFee;   //充电费用
-    double serviceFee;  //服务费用
-};
 class Car // 车辆
 {
 public:
@@ -48,7 +36,8 @@ public:
     double BatteryNow = 0.0;    // 当前电池电量
     CarAsk *Ask = nullptr;      // 为NULL时没有ask
     CarReply *Reply = nullptr;  // 为NULL时没有reply
-    ChargeInfo *info = nullptr; //充电详情
+    CostTable *info = nullptr;  //充电详单
+
     Car(std::string uname = "", int CID = 0, std::string Cname = "", double BCap = 0.0, double BNow = 0.0);
     ~Car();
 };
