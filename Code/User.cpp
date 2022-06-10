@@ -541,13 +541,13 @@ socket
 int Customer::sendChargeRequest()
 {
 	return 1; // test
-
-	send_info.cmd = CHARGE_REQUEST; //此处未记录电池容量 若server需要再加
+	
+	send_info.cmd = CHARGE_REQUEST;//此处未记录电池容量 若server需要再加
 	strcpy_s(send_info.UID, this->usrname.c_str());
-	// send_info.MODE = (this->car->getCarAsk()->IsFastCharge == 1 ? 1 : 0);
-	// send_info.BALANCE = this->car->getCarAsk()->ChargeCap;	//BANLANCE复用为充电量
-	// send_info.MODE = this->car->Ask->IsFastCharge == 1 ? 1 : 0;
 	send_info.MODE = this->car->Ask->IsFastCharge == true ? FAST : SLOW;
+	send_info.COST = this->car->Ask->BatteryNow;	//COST复用为当前容量
+	send_info.BatteryCap = this->car->Ask->BatteryCap;	//BatteryCap记录电池总容量
+	send_info.BALANCE = this->car->Ask->ChargeCap;	//BANLANCE复用为充电量
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
