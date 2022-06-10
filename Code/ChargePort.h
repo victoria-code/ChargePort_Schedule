@@ -30,6 +30,7 @@ typedef struct // 充电详单,for user
     int ChargeID;           // 详单编号
     time_t CreateTableTime; // 详单生成时间
     int SID;                // 充电桩编号
+    bool IsFastCharge;      //充电模式
     std::string usrname;    // 车辆用户名
     int CarID;              // 汽车编号
     time_t StartTime;       // 启动时间
