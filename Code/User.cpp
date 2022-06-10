@@ -1,7 +1,6 @@
 #include "User.h"
 #include "main.h"
 #include "TSocket.h"	//socket
-#include "ChargePort.h" //充电详单
 
 extern TSocket client_sock;
 
@@ -485,12 +484,23 @@ int Customer::newChargeRequest()
 	}
 
 	//设置充电请求
+	/*
+	std::string usrname;  // 用户ID
+    int CarID;            // 车辆ID
+    int ChargeCap;        // 请求充电量(充电桩使用)
+    bool IsFastCharge;    // 快充还是慢充，快充为1
+    double BatteryCap;    // 电池容量
+    double BatteryNow;    // 当前电池电量
+    time_t StWaitTime;    // 开始等待时间
+	*/
 	CarAsk *ask = new CarAsk;
-	// ask->BatteryCap = this->car->getBatteryCap();
-	ask->BatteryCap = this->car->BatteryCap;
-	// ask->BatteryNow = this->car->BatteryNow;
+	ask->usrname = this->usrname;
+	//没有CarID
+	ask->ChargeCap = charge;
 	ask->IsFastCharge = (mode == FAST ? true : false);
-	// ask->RequestCharge = charge;
+	ask->BatteryCap = this->car->BatteryCap;
+	ask->BatteryNow = this->car->BatteryNow;
+	//开始等待时间由服务器或充电桩填入？
 	this->car->Ask = ask;
 
 	//向服务器提交充电请求
@@ -536,7 +546,8 @@ int Customer::sendChargeRequest()
 	strcpy_s(send_info.UID, this->usrname.c_str());
 	// send_info.MODE = (this->car->getCarAsk()->IsFastCharge == 1 ? 1 : 0);
 	// send_info.BALANCE = this->car->getCarAsk()->ChargeCap;	//BANLANCE复用为充电量
-	send_info.MODE = this->car->Ask->IsFastCharge == 1 ? 1 : 0;
+	// send_info.MODE = this->car->Ask->IsFastCharge == 1 ? 1 : 0;
+	send_info.MODE = this->car->Ask->IsFastCharge == true ? FAST : SLOW;
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
@@ -659,27 +670,30 @@ int Customer::getChargeInfo()
 	suc = sendChargeInfoRequest(); //填充this->car->info
 	if (suc)
 	{
-		ChargeInfo *info = this->car->info;
+		//ChargeInfo *info = this->car->info;
+		CostTable *info = this->car->info;
 		/*
-		std::string infoID;  //详单编号
-		time_t genTime; //详单生成时间
-		int SID;        //充电桩编号
-		int ChargeMode; //充电模式
-		int time;       //充电时长(秒)
-		time_t start;   //启动时间
-		time_t end;     //停止时间
-		double cap;     //充电电量
-		double chargeFee;     //充电费用
-		double serviceFee;    //服务费用
+	int ChargeID;           // 详单编号
+    time_t CreateTableTime; // 详单生成时间
+    int SID;                // 充电桩编号
+	bool IsFastCharge;		// 充电模式
+    std::string usrname;    // 车辆用户名	//NULL
+    int CarID;              // 汽车编号		//NULL
+    time_t StartTime;       // 启动时间
+    time_t End_Time;        // 停止时间
+    double TotalElect;      // 总充电电量,单位/度
+    long long ChargeTime;   // 充电时长，单位/s
+    double ChargeCost;      // 总费用，单位/元
+    double ServiceCost;     // 服务费，单位/元
+    double ElectCost;       // 电费，单位/元
 		*/
 		cout << "----------充电详单----------" << endl;
-		cout << "详单编号: " << info->infoID << "\t生成时间: " << info->genTime
-			 << "\n充电桩ID: " << info->SID << "\t充电模式: " << info->ChargeMode
-			 << "\n启动时间: " << ctime(&(info->start)) << "\t停止时间: " << ctime(&(info->end))
-			 << "\n充电时长: " << getTime(info->end - info->start) << "\t充电电量: " << info->cap << "度"
-			 << "\n充电费用: " << info->chargeFee << "元"
-			 << "\t服务费用: " << info->serviceFee << "元" 
-			 << "\n总费用: "<< info->chargeFee + info->serviceFee <<endl;
+		cout << "详单编号: " << info->ChargeID << "\t详单生成时间: " << ctime(&(info->CreateTableTime))
+			 << "\n充电桩编号: " << info->SID << "\t充电模式: " << (info->IsFastCharge ? "FAST" : "SLOW")
+			 << "\n启动时间: " << ctime(&(info->StartTime)) << "\t停止时间: " << ctime(&(info->End_Time))
+			 << "\n充电时长: " << getTime(info->ChargeTime) << "\t充电电量: " << info->TotalElect
+			 << "\n充电费用: " << info->ElectCost << "\t服务费用: " << info->ServiceCost
+			 << "\n总费用: " << info->ChargeCost << endl;
 		cout << "---------------------------" << endl;
 	}
 	else
@@ -703,21 +717,29 @@ int Customer::sendChargeInfoRequest()
 		client_sock.Recv(recv_info);
 
 	//解析报文 设置充电详情
-	ChargeInfo *info = new ChargeInfo;
+		//ChargeInfo *info = new ChargeInfo;
+	CostTable *info = new CostTable;
 	//详单编号
+	//info->ChargeID = 
 	//详单生成时间
+	//info->CreateTableTime = 
 	info->SID = recv_info.REPLY; // REPLY复用：充电桩编号
-	info->ChargeMode = recv_info.MODE;	//充电模式
-	info->time = recv_info.Q_NUM;  // Q_NUM复用：充电时长
+		//info->ChargeMode = recv_info.MODE;	//充电模式
+	//info->IsFastCharge = 	//充电模式（bool）
 	//启动时间
+	//info->StartTime = 
 	//停止时间
-	info->cap = recv_info.BALANCE; // BANLANCE复用：充电量
-	// info->pay = recv_info.COST;
-	//充电费用
-	//服务费用
+	//info->End_Time = 
+		//info->time = recv_info.Q_NUM;  // Q_NUM复用：充电时长
+	info->ChargeTime = recv_info.Q_NUM;	// Q_NUM复用：充电时长
+		//info->cap = recv_info.BALANCE; // BANLANCE复用：充电量
+	info->TotalElect = recv_info.BALANCE;	// BANLANCE复用：充电量
+		// info->pay = recv_info.COST;
+	//info->ElectCost = 	//充电费用
+	//info->ServiceCost = 	//服务费用
+	//info->ChargeCost = 	//总费用
 
 	this->car->info = info;
-	// this->car->setChargeInfo(info);
 }
 
 /*------Utils------*/
@@ -781,7 +803,8 @@ void User::printChoice(const string choice[], int size)
 }
 
 //将秒转换为时分秒格式
-string User::getTime(int sec)
+//string User::getTime(int sec)
+string User::getTime(long long sec)
 {
 	int h, m, s;
 	h = sec / 3600;
