@@ -52,6 +52,7 @@ public:
 
     bool IsCharging;           // 为1充电区有车
     CarReply ChargingCarReply; // 正在充电的汽车的充电响应
+    int CurElectReq;           // 正在充电的车待充电量
     Car *ChargingCar;          // 正在充电的车
     bool stopCharging;         // 中止充电标志
     bool IsWaiting;            // 为1则等待区有车
