@@ -1,4 +1,57 @@
 #include "Admin.h"
+
+//登录界面
+void Admin::Menu(){
+    while (true)
+	{
+		cout << "**************************************************" << endl;
+		cout << "******************  1.开启充电桩 *******************" << endl;
+		cout << "******************  2.关闭充电桩 *******************" << endl;
+		cout << "******************  3.查询充电桩状态 *******************" << endl;
+		cout << "******************  4.查询排队车辆信息 *******************" << endl;
+		cout << "******************  5.退出登录 *******************" << endl;
+		cout << "******************  6.注销账号 *******************" << endl;
+		cout << "**************************************************" << endl;
+		cout << "\n请输入您的选择： " << endl;
+		int choice;
+		cin >> choice;
+		switch (choice)
+		{
+		case 1:
+		{
+			this->openChargePort();
+			break;
+		}
+		case 2:
+		{
+			this->closeChargePort();
+			break;
+		}
+		case 3:
+		{
+			this->getChargePortInfo();
+			break;
+		}
+		case 4:
+		{
+			this->getAllWaitingCarInfo();
+			break;
+		}
+		case 5:
+		{
+			this->clearData();
+			return;
+		}
+		case 6:
+		{
+			this->deleteAccount();
+			return;
+		}
+		default:
+			break;
+		}
+	}
+}
 //管理员注销
 //todo 我以为注销是登出 看起来user那边写的不是登出是删除账户
 int Admin::deleteAccount(){ 

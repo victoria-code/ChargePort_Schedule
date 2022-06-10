@@ -2,7 +2,7 @@
  * @Author: yummy
  * @Date: 2022-06-08 17:35:24
  * @LastEditors: yummy
- * @LastEditTime: 2022-06-09 22:51:30
+ * @LastEditTime: 2022-06-10 22:52:24
  * @Description: 请填写简介
  */
 #include "User.h"
@@ -19,6 +19,10 @@ public:
         this->type = ADMIN;
     }
 
+    
+    // 登录后的操作界面
+    void Menu();
+    
     /*with chargePort*/
     //查询充电桩信息(充电桩状态)
     bool getChargePortInfo();
