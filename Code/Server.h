@@ -27,11 +27,13 @@ class Server{
         /*with chargePort*/    
         vector<ChargePort*>cData;//记录充电桩状态信息
         int FNum,TNum;  //当前等候区内正在等候的快充/慢充车辆排队号码
-        int fSeq,tSeq;  //当前等候区内即将进入充电区的车辆编号
         int failID;//出现故障的充电桩ID
         time_t failTime;//出现故障的时间
         int spyChargePort();//充电桩信息监控:获取所有充电桩的相关信息/***
        
+       /*记录当前已登录的用户及用户地址*/
+        map<string,string>usrAdress;
+
         /*with admin*/        
         int replyAdmin(string usrname,int cmd,vector<pair<string,string>>info);        //响应管理员客户端请求
 
@@ -40,20 +42,19 @@ class Server{
         map<string,CarAsk*>CUser;    //记录车辆位于充电区的用户及其请求
         map<string,pair<string,int>>queueData;//记录排队号码和前车等待数量
 
+        int replyUser(Info* usrInfo);//响应用户客户端请求
         int logIn(string usrname,string passwd,usrEntry* uE);//登录验证，登录成功则获取用户信息
         int signIn(string usrname,string passwd,string role);//注册认证
         int balanceChange(string usrname,int amount);//充值、扣费
-        int Server::deleteUsr(string usrname);//用户注销
-        int replyUser(Info* usrInfo);//响应用户客户端请求
+        int deleteUsr(string usrname);//用户注销
         int copeChargeRequest(CarAsk* ask);//处理等候区内用户的充电请求
         int cancelCharge(string usrname);//处理用户取消充电申请
+        void returnBill_schedule();//监测到充电结束后返回充电详情,包含计费信息,检测到有空位是进行调度
+        int getQueueData(string usrname,string &qNum,int &curWait);//获取排队信息
         string queueNumGenerate(string usrname,int mode);//车辆排队号码生成
         int getCurWaitNum(string usrname);//获取最新的前车等待数量信息
-        int schedule(string usrname,int mode,int amount);//调度策略生成，返回充电桩编号
-        int recordBill(string usrname,int mode,int time);//费用计算，返回指定用户需要支付的充电费用,time为实际充电时间
-        bool usrDataMaintain(string usrname,vector<pair<string,string>> info);//用户信息维护：info格式：<“被修改属性名”，“修改后属性值”>】
-
-
+        int Calling(string &fUser,string &tUser);//获取等候区内即将进入充电区的快充和慢充usrname(叫号）
+        int getFreeCP(int &fID,int &tID,int &fTime,int &tTime);//获取充电区内排队队列有空位且等待时间最短的充电桩
 };
 
 //数据库更新
@@ -107,15 +108,6 @@ struct logEntry{
     int cost;//金额
 };
 
-
-/*充电桩信息记录*/
-struct chargePortData{
-    int mode;//充电桩模式
-    int state;//充电桩状态（开、关）
-    int wCarNum;//当前等候该充电桩的车辆数目
-    int total;//充电桩开启以来提供的电量
-    //待续....
-};
 
 //以字符ch为分隔符字符串拆分
 int split(vector<string>&target,string line,char ch);
