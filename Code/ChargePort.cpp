@@ -43,7 +43,8 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
            CarPtr->BatteryNow != CarPtr->BatteryCap &&
            !ChargePortPtr->stopCharging)
     {
-        Sleep(3); //每3秒进行一次数据更新。
+        //Sleep(3); //每3秒进行一次数据更新。
+        Sleep(3000); //每3秒进行一次数据更新。
         time_now = time(NULL);
         int time = time_now - start_time;
         //这里的时间计算加速了，可以后期调整，每1s作为1min计算。
@@ -67,6 +68,7 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
     CostTable costtable{++ChargeTableID,
                         time(NULL),
                         ChargePortPtr->SID,
+                        ChargePortPtr->IsFastCharge,    //充电模式
                         CarPtr->usrname,
                         CarPtr->CarID,
                         start_time,
