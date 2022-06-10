@@ -27,9 +27,7 @@
 #define CHARGE_REQUEST 104  //提交充电申请
 #define CANCEL_REQUEST 105  //取消充电
 #define GET_CHARGE_INFO 106	//充电结束后获取充电详情
-#define QUEUE_NUM_GET 107  //获取排队号码
-#define CHARGE_STAT 108	//充电状态
-#define GET_BILL 110  //获取计费信息
+#define GET_QUEUE_DATA 107  //获取排队信息
 
 
 //管理员客户端对服务器请求cmd编号（可自加）
