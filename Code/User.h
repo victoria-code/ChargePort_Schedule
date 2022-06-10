@@ -53,7 +53,8 @@ public:
 	//输出选项
 	void printChoice(const string choice[], int size);
 	//获取时间（秒转换为时分秒）
-	string getTime(int sec);
+	//string getTime(int sec);
+	string getTime(long long sec);
 };
 
 class Customer : public User
