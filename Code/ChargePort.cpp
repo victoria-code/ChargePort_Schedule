@@ -1,22 +1,25 @@
 #include "ChargePort.h"
 
-const double HIGH_ELEC_PRICE = 1.0;   //峰电价，单位元/度
-const double LOW_ELEC_PRICE = 0.4;    //谷电价，单位元/度
-const double NORMAL_ELEC_PRICE = 0.7; //平电价，单位元/度
-const double SERVICE_PRICE = 0.8;     //服务价，单位元/度
-const double FAST_CHARGE_RATE = 30;   //快充功率，单位度/小时
-const double SLOW_CHARGE_RATE = 7;    //慢充功率，单位度/小时
+const double HIGH_ELEC_PRICE = 1.0;   // 峰电价，单位元/度
+const double LOW_ELEC_PRICE = 0.4;    // 谷电价，单位元/度
+const double NORMAL_ELEC_PRICE = 0.7; // 平电价，单位元/度
+const double SERVICE_PRICE = 0.8;     // 服务价，单位元/度
+const double FAST_CHARGE_RATE = 30;   // 快充功率，单位度/小时
+const double SLOW_CHARGE_RATE = 7;    // 慢充功率，单位度/小时
 
-CPStatusTable NULLStatusTable; //空状态表
-CarReply NULLCarReply;         //空充电请求
+CPStatusTable NULLStatusTable; // 空状态表
+CarReply NULLCarReply;         // 空充电请求
 ChargeThreadPool *ChargeHead;  // 开始充电请求队列头
 ChargeThreadPool *ChargeTail;  // 开始充电请求队列尾
-int ChargeTableID = 0;         //充电详单ID
+int ChargeTableID = 0;         // 用来生成充电详单ID
 // StopThreadPool *StopHead;      // 结束充电请求池队列头
 // StopThreadPool *StopTail;      // 结束充电请求池队列尾
 
 ChargeTablePool *ChargeHead; // 回复充电详单请求队列头
 ChargeTablePool *ChargeTail; // 回复充电详单请求队列尾
+
+std::mutex Chargelock;      // 添加充电过程到线程池的互斥锁
+std::mutex ChargeTablelock; // 添加充电详单到请求池的互斥锁
 
 int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
 {
@@ -43,11 +46,11 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
            CarPtr->BatteryNow != CarPtr->BatteryCap &&
            !ChargePortPtr->stopCharging)
     {
-        //Sleep(3); //每3秒进行一次数据更新。
-        Sleep(3000); //每3秒进行一次数据更新。
+        // Sleep(3); // 每3秒进行一次数据更新。
+        Sleep(3000); // 每3秒进行一次数据更新。
         time_now = time(NULL);
         int time = time_now - start_time;
-        //这里的时间计算加速了，可以后期调整，每1s作为1min计算。
+        // 这里的时间计算加速了，可以后期调整，每1s作为1min计算。
         ElectNow = unitrate * time / 60;
         ElectPrice = HIGH_ELEC_PRICE * ElectNow;
         ServicePrice = SERVICE_PRICE * ElectNow;
@@ -64,13 +67,12 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
             break;
         }
     }
-    //更新一张充电表
+    // 更新一张充电表
     CostTable costtable{++ChargeTableID,
                         time(NULL),
                         ChargePortPtr->SID,
-                        ChargePortPtr->IsFastCharge,    //充电模式
+                        ChargePortPtr->IsFastCharge, // 充电模式
                         CarPtr->usrname,
-                        CarPtr->CarID,
                         start_time,
                         time_now,
                         ElectNow,
@@ -78,14 +80,22 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
                         ElectPrice + ServicePrice,
                         ServicePrice,
                         ElectPrice};
+    for (;;)
+    {
+        if (ChargeTablelock.try_lock())
+        {
+            break;
+        }
+    }
     ChargeTablePool *nextct = new ChargeTablePool;
     nextct->isAvailable = false;
     nextct->ChargeTable = costtable;
     ChargeTableTail->next = nextct;
     ChargeTableTail->isAvailable = true;
     ChargeTableTail = nextct;
-    ChargePortPtr->stopCharging = false;
+    ChargeTablelock.unlock();
 
+    ChargePortPtr->stopCharging = false;
     return 0;
 }
 int aaa(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
@@ -98,30 +108,37 @@ void ChargeThread()
     {
         if (ChargeHead->isAvailable)
         {
+            for (;;)
+            {
+                if (Chargelock.try_lock())
+                {
+                    break;
+                }
+            }
             ChargeThreadPool *next = ChargeHead->next;
             delete ChargeHead;
 
             // 从线程池里取出并创造一个充电线程
             std::thread CP(ChargeProc, next->ChargePortPtr, next->CarPtr, next->RepPtr, next->ElectReq);
-            CP.detach(); //将该线程分离出去，不阻塞，线程运行完结束，server关闭时该线程也会结束
+            CP.detach(); // 将该线程分离出去，不阻塞，线程运行完结束，server关闭时该线程也会结束
 
             ChargeHead = next;
+            Chargelock.unlock();
         }
     }
 }
 void BuildChargePortThread()
 {
-    //不仅进行模拟充电的线程处理，一些初始化也在这里完成
-    //初始化一个空的充电桩状态表
+    // 不仅进行模拟充电的线程处理，一些初始化也在这里完成
+    // 初始化一个空的充电桩状态表
     NULLStatusTable.SID = NULLStatusTable.ChargeCnt = 0;
     NULLStatusTable.OnState = NULLStatusTable.IsCharging = false;
     NULLStatusTable.IsWaiting = NULLStatusTable.IsFastCharge = false;
     NULLStatusTable.ChargeCost = NULLStatusTable.ChargeTime = 0;
     NULLStatusTable.TotalElect = NULLStatusTable.ServiceCost = NULLStatusTable.ElectCost = 0;
     NULLStatusTable.TableTime = time(NULL);
-    //初始化一个空的汽车充电请求回应
+    // 初始化一个空的汽车充电请求回应
     NULLCarReply.Ask.usrname = "";
-    NULLCarReply.Ask.CarID = 0;
     NULLCarReply.Ask.ChargeCap = 0;
     NULLCarReply.Ask.IsFastCharge = false;
     NULLCarReply.Ask.BatteryCap = 0;
@@ -135,8 +152,8 @@ void BuildChargePortThread()
     ChargeTail = ChargeHead;
     ChargeHead->isAvailable = false;
 
-    std::thread Cth(ChargeThread); //处理充电的线程
-    Cth.detach();                  //将该线程分离出去，server关闭时该线程同时结束
+    std::thread Cth(ChargeThread); // 处理充电的线程
+    Cth.detach();                  // 将该线程分离出去，server关闭时该线程同时结束
     /*
         StopHead = new StopThreadPool;
         StopTail = StopHead;
@@ -165,26 +182,42 @@ ChargePort::ChargePort(int CPID, bool fast, bool on, int CCnt = 0, double CCost 
 }
 bool ChargePort::on()
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     OnState = true;
+    CPlock.unlock();
     return 1;
 }
 bool ChargePort::off()
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     if (IsCharging || IsWaiting) // 有车在充电区时失败
     {
         return 0;
     }
     OnState = false;
+    CPlock.unlock();
     return 1;
 }
 CPStatusTable ChargePort::GetStatus()
 {
     CPStatusTable a = NULLStatusTable;
     a.SID = SID;                   // 充电桩编号
-    a.IsFastCharge = IsFastCharge; //快充还是慢充，快充为1,慢充为0
+    a.IsFastCharge = IsFastCharge; // 快充还是慢充，快充为1,慢充为0
     a.OnState = OnState;           // 开关状态，true开false关
     a.IsCharging = IsCharging;     // 为 true 则充电区有车
-    a.IsWaiting = IsWaiting;       //为 true 则等待区有车
+    a.IsWaiting = IsWaiting;       // 为 true 则等待区有车
     a.ChargeCnt = ChargeCnt;       // 累计充电次数
     a.ChargeCost = ChargeCost;     // 累计总费用。单位/元
     a.ChargeTime = ChargeTime;     // 累计充电时长。单位/min
@@ -196,6 +229,13 @@ CPStatusTable ChargePort::GetStatus()
 }
 CarReply ChargePort::GetChargingCar()
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     if (IsCharging)
         return ChargingCarReply;
     else
@@ -203,9 +243,17 @@ CarReply ChargePort::GetChargingCar()
         NULLCarReply.Ask.StWaitTime = time(NULL);
         return NULLCarReply;
     }
+    CPlock.unlock();
 }
 CarReply ChargePort::GetWaitingCar()
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     if (IsWaiting)
         return WaitingCarReply;
     else
@@ -213,9 +261,17 @@ CarReply ChargePort::GetWaitingCar()
         NULLCarReply.Ask.StWaitTime = time(NULL);
         return NULLCarReply;
     }
+    CPlock.unlock();
 }
 bool ChargePort::AddCar(CarReply myreply, Car *mycar)
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     if (IsCharging)
     {
         if (IsWaiting)
@@ -236,20 +292,36 @@ bool ChargePort::AddCar(CarReply myreply, Car *mycar)
         ChargingCarReply = myreply;
 
         //将一个新的充电过程放到充电线程池。
+        for (;;)
+        {
+            if (Chargelock.try_lock())
+            {
+                break;
+            }
+        }
         ChargeThreadPool *nextth = new ChargeThreadPool;
         nextth->isAvailable = false;
         nextth->ChargePortPtr = this;
         nextth->CarPtr = mycar;
         nextth->RepPtr = &(this->ChargingCarReply);
         nextth->ElectReq = myreply.Ask.ChargeCap;
-
         ChargeTail->next = nextth;
         ChargeTail->isAvailable = true;
+        ChargeTail = nextth;
+        Chargelock.unlock();
     }
+    CPlock.unlock();
     return true;
 }
 bool ChargePort::DeleteCar(Car *mycar)
 {
+    for (;;)
+    {
+        if (CPlock.try_lock())
+        {
+            break;
+        }
+    }
     if (mycar == WaitingCar)
     {
         WaitingCar = NULL;
@@ -277,6 +349,13 @@ bool ChargePort::DeleteCar(Car *mycar)
             IsCharging = true;
             IsWaiting = false;
             //将一个新的充电过程放到充电线程池。
+            for (;;)
+            {
+                if (Chargelock.try_lock())
+                {
+                    break;
+                }
+            }
             ChargeThreadPool *nextth = new ChargeThreadPool;
             nextth->isAvailable = false;
             nextth->ChargePortPtr = this;
@@ -286,6 +365,7 @@ bool ChargePort::DeleteCar(Car *mycar)
             ChargeTail->next = nextth;
             ChargeTail->isAvailable = true;
             ChargeTail = nextth;
+            Chargelock.unlock();
         }
         else
         {
@@ -293,5 +373,6 @@ bool ChargePort::DeleteCar(Car *mycar)
         }
         return true;
     }
+    CPlock.unlock();
     return false;
 }
