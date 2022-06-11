@@ -1,9 +1,8 @@
 #include "Car.h"
 
-Car::Car(std::string uname = "", std::string Cname = "", double BCap = 0.0, double BNow = 0.0)
+Car::Car(std::string uname, std::string Cname, double BCap, double BNow)
 {
     usrname = uname;
-    CarName = Cname;
     BatteryCap = BCap;
     BatteryNow = BNow;
 }
