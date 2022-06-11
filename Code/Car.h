@@ -2,7 +2,7 @@
 #define CAR_H
 #include <ctime>
 #include <string>
-#include "ChargePort.h" //充电详单
+//#include "ChargePort.h" //充电详单
 
 typedef struct //汽车充电请求
 {
@@ -29,12 +29,11 @@ class Car // 车辆
 {
 public:
     std::string usrname;       // 用户名
-    std::string CarName;       // 车辆名称
     double BatteryCap = 0.0;   // 电池容量
     double BatteryNow = 0.0;   // 当前电池电量
     CarAsk *Ask = nullptr;     // 为NULL时没有ask
     CarReply *Reply = nullptr; // 为NULL时没有reply
-    CostTable *info = nullptr; //充电详单
+    // CostTable *info = nullptr; //充电详单
 
     Car(std::string uname = "", std::string Cname = "", double BCap = 0.0, double BNow = 0.0);
     ~Car();
