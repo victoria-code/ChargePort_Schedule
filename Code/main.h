@@ -53,6 +53,7 @@ struct Info
 	int Q_NUM;		//排队号码
 	int W_NUM;		//前车等待数量
 	double COST;	//充电费用
+	double BatteryCap;	//电池总容量
 	double BALANCE;	//余额			复用：充电量
 	int REPLY;		//响应报文使用 表示请求结果		复用：充电桩编号
 };
