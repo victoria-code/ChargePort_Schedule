@@ -1,3 +1,6 @@
+#ifndef TSOCKET_H
+#define TSOCKET_H
+
 #include <WinSock2.h>
 #include <string>
 #include <iostream>
@@ -33,3 +36,4 @@ public:
 //客户端为client_sock  服务器端改为server_sock即可
 //extern TSocket client_sock; 
 
+#endif
