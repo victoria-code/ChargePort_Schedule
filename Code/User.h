@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Car.h"    //充电相关
+#include "ChargePort.h"	//充电详单
 
 #include<iostream>
 #include<string>
@@ -26,14 +27,6 @@ public:
 			delete this->car;
 	}
 
-	//用户登录
-	//int logIN();
-	//int sendLogInRequest(string usrname, string password);  //发送登录请求报文
-
-	////用户注册
-	//int signUp();
-	//int sendSignUpRequest(string usrname, string password, int type); //发送注册请求报文
-
 	//用户注销
 	virtual int deleteAccount() { return 0; }    //由子类实现
 	int sendDeleteRequest(string usrname);    //发送注销请求报文
@@ -43,23 +36,13 @@ public:
 
 	//清空数据 用于退出登录和注销
 	void clearData();
-
-
-	/*------Utils------*/
-	//判断充值金额合法性
-	bool isPosNum(string str);
-	//判断输入是否是合法选项(max: 最大选项序号)
-	bool isLegalChoice(string str, int max);
-	//输出选项
-	void printChoice(const string choice[], int size);
-	//获取时间（秒转换为时分秒）
-	//string getTime(int sec);
-	string getTime(long long sec);
 };
 
 class Customer : public User
 {
 public:
+	CostTable *info = nullptr; //充电详单
+
 	Customer()
 	{
 		this->type = CUSTOMER;
@@ -120,5 +103,16 @@ public:
 	//管理员登录成功后显示的菜单
 	void showMenu();
 };
+
+/*------Utils------*/
+//判断充值金额合法性
+bool isPosNum(string str);
+//判断输入是否是合法选项(max: 最大选项序号)
+bool isLegalChoice(string str, int max);
+//输出选项
+void printChoice(const string choice[], int size);
+//获取时间（秒转换为时分秒）
+// string getTime(int sec);
+string getTime(long long sec);
 
 #endif
