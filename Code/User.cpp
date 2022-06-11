@@ -1,77 +1,9 @@
+#include "TSocket.h"	//socket
 #include "User.h"
 #include "main.h"
-#include "TSocket.h"	//socket
 
 extern TSocket client_sock;
 
-/*
-用户登录
-服务器：检查用户名和密码
-返回：登录成功/失败(1/0)
-*/
-// int User::logIN()
-//{
-//	int suc = 0;
-//	cout << "==========登录界面=========" << endl;
-//	//提示用户注册
-//	//string choice[] = { "以现有账号登录", "注册新账号" };
-//	//cout << "请选择登录选项: ";
-//	//printChoice(choice, 2);
-//	//string id;
-//	//while (getline(cin, id), !isLegalChoice(id, 2))
-//	//{
-//	//	cout << "输入无效,请重新选择: ";
-//	//	printChoice(choice, 2);
-//	//}
-//	//if (id == "2")
-//	//{
-//	//	return signUp();
-//	//}
-//
-//	//获取用户输入的用户名和密码
-//	string usrname, password;
-//	cout << "请输入用户名：";
-//	while (getline(cin, usrname), usrname == "")
-//		;
-//	cout << "请输入密码：";
-//	while (getline(cin, password), password == "")
-//		;
-//
-//	//向服务器发送登录请求
-//	suc = sendLogInRequest(usrname, password);
-//
-//	//提示登录成功/失败信息
-//	// suc=1表示成功，2表示用户名错误，3表示密码错误
-//	while (suc != 1)
-//	{
-//		if (suc == 2)
-//		{
-//			cout << "登录失败，请检查用户名是否正确" << endl;
-//			cout << "重新输入用户名:";
-//			while (getline(cin, usrname), usrname == "")
-//				;
-//		}
-//		else if (suc == 3)
-//		{
-//			cout << "登录失败，请检查密码是否正确" << endl;
-//			cout << "重新输入密码:";
-//			while (getline(cin, password), password == "")
-//				;
-//		}
-//		suc = sendLogInRequest(usrname, password);
-//	}
-//
-//	//初始化用户名、余额和车辆信息
-//	this->usrname = usrname;
-//	if (this->type == CUSTOMER)
-//	{
-//		this->balance = getUsrBalance();
-//		this->car = getCarInfo();
-//	}
-//
-//	cout << "登录成功！" << endl;
-//	return suc;
-// }
 /*
 清空数据 用于退出登录或注销
 */
@@ -101,103 +33,6 @@ Car *Customer::getCarInfo()
 	return nullptr; // test
 }
 
-/*
-发送登录请求
-socket
-*/
-// int User::sendLogInRequest(string usrname, string password)
-//{
-//	return 1; // test
-//
-//	// send_info.cmd = LOG_IN;
-//	// strcpy(send_info.UID, usrname.c_str());
-//	// strcpy(send_info.PWD, password.c_str());
-//
-//	// //发送报文
-//	// client_sock.Send(send_info);
-//
-//	// //接收服务器发回的响应报文
-//	// client_sock.Recv(recv_info);
-//	/*while(strcmp(recv_info.UID,this->usrname.c_str()))
-//		client_sock.Recv(recv_info);*/	//确认是否是发给自己的
-//
-//	if (recv_info.MODE == 1)
-//	{
-//
-//	}
-//
-//	// return recv_info.REPLY;   //test
-// }
-
-/*
-用户注册
-服务器：检查用户名和密码，新增用户数据
-返回：注册成功/失败(1/0)
-*/
-// int User::signUp()
-//{
-//	cout << "==========注册界面=========" << endl;
-//	//获取用户输入的用户名和密码
-//	//对密码没有限制，只要不为空即可；用户名不能与已有的重复
-//	string usrname, password;
-//	cout << "请输入用户名：";
-//	while (getline(cin, usrname), usrname == "")
-//		;
-//	cout << "请输入密码：";
-//	while (getline(cin, password), password == "")
-//		;
-//
-//	string choice[] = { "普通用户", "管理员" };
-//	cout << "请选择您想注册的用户类型: ";
-//	printChoice(choice, 2);
-//	string id;
-//	while (getline(cin, id), !isLegalChoice(id, 2))
-//	{
-//		cout << "输入无效,请重新选择: ";
-//		printChoice(choice, 2);
-//	}
-//
-//	//向服务器发送注册申请
-//	int suc = sendSignUpRequest(usrname, password, atof(id.c_str()));
-//	while (!suc)
-//	{
-//		cout << "注册失败，此用户名不可用" << endl;
-//		cout << "重新输入用户名：";
-//		while (getline(cin, usrname), usrname != "")
-//			;
-//		suc = sendSignUpRequest(usrname, password, atof(id.c_str()));
-//	}
-//
-//	cout << "注册成功！" << endl;
-//	system("pause");
-//	return suc;	//注册成功后返回主界面 暂不登录
-// }
-
-/*
-发送注册请求
-socket
-*/
-// int User::sendSignUpRequest(string usrname, string password, int type)
-//{
-//	return 1; // test
-//
-//	// send_info.cmd = SIGN_UP;
-//	// strcpy(send_info.UID, usrname.c_str());
-//	// strcpy(send_info.PWD, password.c_str());
-//	// send_info.MODE = type;
-//
-//	// client_sock.Send(send_info);
-//	// client_sock.Recv(recv_info);
-//	// while(strcmp(recv_info.UID,this->usrname.c_str()))
-//	// 	client_sock.Recv(recv_info);// 确认是否是发给自己的
-//
-//	// //客户端记录用户数据
-//	// this->usrname = recv_info.UID;
-//
-//	// return recv_info.REPLY;   //test
-// }
-
-// int User::deleteAccount() //子类实现
 /*
 发送注销请求
 socket
@@ -276,10 +111,12 @@ void Customer::showMenu()
 		cout << "******************  5.退出登录 *******************" << endl;
 		cout << "******************  6.注销账号 *******************" << endl;
 		cout << "**************************************************" << endl;
-		cout << "\n请输入您的选择： " << endl;
-		int choice;
-		cin >> choice;
-		switch (choice)
+		cout << "\n请输入您的选择: ";
+		string choice;
+		while(getline(cin, choice), !isLegalChoice(choice, 6))
+			cout << "输入无效，请重新选择: ";
+
+		switch (choice[0] - '0')
 		{
 		case 1:
 		{
@@ -439,8 +276,7 @@ int Customer::newChargeRequest()
 			cout << "输入无效，请重新输入电池容量: ";
 		const char *s = kwh_str.c_str();
 		double kwh = atof(s);
-		// this->car->setBatteryCap(kwh); //设置电池容量
-		this->car->BatteryCap = kwh;
+		this->car->BatteryCap = kwh;	//设置电池容量
 	}
 
 	int status = getChargeStatus(); //向服务器获取：是否正在充电
@@ -670,8 +506,8 @@ int Customer::getChargeInfo()
 	suc = sendChargeInfoRequest(); //填充this->car->info
 	if (suc)
 	{
-		//ChargeInfo *info = this->car->info;
-		CostTable *info = this->car->info;
+		// CostTable *info = this->car->info;
+		CostTable *info = this->info;
 		/*
 	int ChargeID;           // 详单编号
     time_t CreateTableTime; // 详单生成时间
@@ -739,14 +575,15 @@ int Customer::sendChargeInfoRequest()
 	//info->ServiceCost = 	//服务费用
 	//info->ChargeCost = 	//总费用
 
-	this->car->info = info;
+	//this->car->info = info;
+	this->info = info;
 }
 
 /*------Utils------*/
 
 //判断充值金额合法性
 //判断输入是否为正数（整型或浮点型，且最大小数位数为2）
-bool User::isPosNum(string str)
+bool isPosNum(string str)
 {
 	if (str == "")
 		return false;
@@ -780,7 +617,7 @@ bool User::isPosNum(string str)
 }
 
 //判断输入是否为合法选项(max: 最大选项序号)
-bool User::isLegalChoice(string str, int max)
+bool isLegalChoice(string str, int max)
 {
 	if (str.size() > 1)
 		return false;
@@ -791,7 +628,7 @@ bool User::isLegalChoice(string str, int max)
 }
 
 //输出选项
-void User::printChoice(const string choice[], int size)
+void printChoice(const string choice[], int size)
 {
 	string separator = "    ";
 	string str = "";
@@ -804,7 +641,7 @@ void User::printChoice(const string choice[], int size)
 
 //将秒转换为时分秒格式
 //string User::getTime(int sec)
-string User::getTime(long long sec)
+string getTime(long long sec)
 {
 	int h, m, s;
 	h = sec / 3600;
