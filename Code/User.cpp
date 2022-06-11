@@ -1,8 +1,29 @@
-#include "TSocket.h"	//socket
+﻿#include "TSocket.h"	//socket
 #include "User.h"
 #include "main.h"
 
 extern TSocket client_sock;
+
+/*
+	专门用于接收报文的函数
+*/
+void keepRecv()
+{
+	struct Info subInfo;
+	TSocket subScoket;
+	while(1)
+	{
+		subScoket.Recv(subInfo);
+		switch(subInfo.cmd){
+			case 300:
+				break;
+			case 301:
+				break;
+			case 302:
+				break;
+				}
+	}
+}
 
 /*
 清空数据 用于退出登录或注销
@@ -346,6 +367,8 @@ int Customer::newChargeRequest()
 	{
 		cout << "提交充电请求成功，正在获取排队信息..." << endl;
 		cout << "您当前的排队号码为: " << this->car->Reply->queueNum << ", 前方还有" << this->car->Reply->waitingNum << "辆车在等待" << endl;
+		std::thread sub{};
+		sub.detach();
 	}
 	else
 		cout << "提交充电请求失败，请稍后再试" << endl;
@@ -482,7 +505,7 @@ int Customer::getQueueRes()
 // socket
 int Customer::sendQueueInfoRequest()
 {
-	send_info.cmd = QUEUE_NUM_GET;
+	send_info.cmd = GET_QUEUE_DATA;
 	strcpy_s(send_info.UID, this->usrname.c_str());
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
