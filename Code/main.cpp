@@ -1,10 +1,11 @@
 #include<iostream>
 #include<string>
 #include<math.h>    //floor()
+
+#include "TSocket.h"
 #include "main.h"
 #include "User.h"
 #include "client.h"
-#include "TSocket.h"
 using namespace std;
 
 struct Info send_info, recv_info;
@@ -14,31 +15,25 @@ int main()
 	while (1)
 	{
 		cout << "\n**************************************************" << endl;
-		cout << "***************  欢迎使用充电桩系统  ****************" << endl;
-		cout << "*****************  0.退出系统  *******************" << endl;
-		cout << "*****************  1.用户注册  *******************" << endl;
-		cout << "*****************  2.用户登录  *******************" << endl;
+		cout << "***************  欢迎使用充电桩系统  *************" << endl;
+		cout << "*****************  1.退出系统  *******************" << endl;
+		cout << "*****************  2.用户注册  *******************" << endl;
+		cout << "*****************  3.用户登录  *******************" << endl;
 		cout << "**************************************************" << endl;
 
-		cout << "请输入您的选择：(整数）" << endl;
-		int choice = -1;
-		cin >> choice;
-		while (cin.fail())
-		{
-			cin.clear();	//清屏
-			cin.ignore();	//忽略缓冲区内容
-			cout << "您输入的不是整数！请输入一个整数！" << endl;
-			cin >> choice;
-		}
+		cout << "请输入您的选择：";
+		string choice;
+		while(getline(cin, choice), !isLegalChoice(choice, 3))
+			cout << "输入无效，请重新选择: ";
 		
 		Client *client = new Client;
-		switch (choice)
+		switch (choice[0] - '0')
 		{
-		case 0:
-			break;
 		case 1:
-			client->signUp();
+			break;
 		case 2:
+			client->signUp();
+		case 3:
 			client->logIN();
 			break;
 		default:
