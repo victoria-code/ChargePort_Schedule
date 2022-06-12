@@ -1,4 +1,4 @@
-﻿#ifndef __USER_H__
+#ifndef __USER_H__
 #define __USER_H__
 #pragma once
 
@@ -63,9 +63,6 @@ public:
 	//充值
 	int recharge();
 	//int sendRechargeRequest(double amount);     //发送充值请求报文
-	//扣费
-	int deduct();
-	//int sendDeductRequest();    //发送扣费请求(告知服务器可以进行扣费操作)
 	int sendUpdateBalanceRequest(double amount);	//发送余额更新报文
 
 
@@ -86,9 +83,6 @@ public:
 	int getQueueRes();
 	int sendQueueInfoRequest();
 
-	//(充电结束后)查看充电详情
-	int getChargeInfo();
-// 	int sendChargeInfoRequest();
 	void keepRecv();	//持续接收消息的线程函数
 
 };
