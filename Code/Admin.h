@@ -2,10 +2,11 @@
  * @Author: yummy
  * @Date: 2022-06-08 17:35:24
  * @LastEditors: yummy
- * @LastEditTime: 2022-06-10 22:52:24
+ * @LastEditTime: 2022-06-12 15:40:32
  * @Description: 请填写简介
  */
 #include "User.h"
+#include "client.h"
 #include "main.h"
 #include "TSocket.h"
 #include "ChargePort.h"
@@ -24,20 +25,18 @@ public:
     void Menu();
     
     /*with chargePort*/
-    //查询充电桩信息(充电桩状态)
+    //查询充电桩信息(充电桩状态、排队车辆信息、报表)
     bool getChargePortInfo();
-    //查询等候服务车辆信息
-    bool getAllWaitingCarInfo();
 
     //开启充电桩
-    bool openChargePort(int SID);
+    bool openChargePort();
 
     //关闭充电桩
-    bool closeChargePort(int SID);
+    bool closeChargePort();
 
     //向服务器发送请求
-    int sendRequest(string usrname, int cmd, string request); 
-    int sendReportRequest(string usrname, int cmd, string request);
+    int sendRequest(string usrname, int cmd, int number); 
+    int sendReportRequest(string usrname, int cmd);
     
     //用户注销
     int deleteAccount();
