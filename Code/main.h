@@ -33,14 +33,13 @@
 #define CALL 301	//叫号，客户进入充电区
 #define BREAKDOWN 302 //充电桩故障提醒+当前充电详单+扣费成功提醒
 
-#define REPORT 303 //报表
-
 
 //管理员客户端对服务器请求cmd编号（可自加）
 #define SPY_CHARGEPORT  200 //充电桩信息监控
-#define DATA_STATISTICS 201 //数据统计
-#define OPEN_CHARGEPORT 202 //打开所有充电桩
-#define CLOSE_CHARGEPORT 203//关闭所有充电桩
+#define WAIT_CAR_DATA 201	//查看等候的车辆信息
+#define DATA_STATISTICS 202 //查看报表
+#define OPEN_CHARGEPORT 203 //打开充电桩
+#define CLOSE_CHARGEPORT 204//关闭充电桩
 
 //socket连接用的请求编号
 #define CLOSE 300 //断开连接
