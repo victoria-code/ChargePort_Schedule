@@ -88,7 +88,8 @@ public:
 
 	//(充电结束后)查看充电详情
 	int getChargeInfo();
-	int sendChargeInfoRequest();
+// 	int sendChargeInfoRequest();
+	void keepRecv();	//持续接收消息的线程函数
 
 };
 
