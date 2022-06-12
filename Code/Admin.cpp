@@ -166,6 +166,14 @@ int Admin::sendRequest(string usrname,int cmd,int number){
     return recv_info.REPLY;
 }
 
+//发送查询请求
+int Admin::sendReportRequest(string usrname,int cmd){
+    send_info.cmd = cmd;
+    strcpy(send_info.UID, usrname.c_str());
+    client_sock.Send(send_info);
+    client_sock.Recv(recv_info);
+}
+
 //打印返回信息内容
 int Admin::printRecv(int cmd){
     string recv(recv_info.output);
