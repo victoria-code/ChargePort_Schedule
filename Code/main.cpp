@@ -8,6 +8,9 @@
 #include "client.h"
 using namespace std;
 
+
+mutex mutexUsr;	//修改用户信息时用到的互斥锁
+mutex mutexSock;	//使用client_socket时的互斥锁
 struct Info send_info, recv_info;
 
 int main()
