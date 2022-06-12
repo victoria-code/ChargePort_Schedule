@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include<vector>
 #include<iostream>
@@ -26,8 +26,14 @@
 #define DELETE_USER 103//用户注销·
 #define CHARGE_REQUEST 104  //提交充电申请
 #define CANCEL_REQUEST 105  //取消充电
-#define GET_CHARGE_INFO 106	//充电结束后获取充电详情
-#define GET_QUEUE_DATA 107  //获取排队信息
+#define GET_QUEUE_DATA 106  //获取排队信息
+
+//服务端主动向客户端发送的消息
+#define DETAIL 300	//充电完成提醒+充电详单+扣费成功提醒
+#define CALL 301	//叫号，客户进入充电区
+#define BREAKDOWN 302 //充电桩故障提醒+当前充电详单+扣费成功提醒
+
+#define REPORT 303 //报表
 
 
 //管理员客户端对服务器请求cmd编号（可自加）
@@ -48,14 +54,15 @@ struct Info
 {
 	int cmd;	//消息类型
 	char UID[20];	//用户名
-	char PWD[10];	//密码
+	char PWD[10];	//密码	
 	int MODE;		//充电模式：0慢1快  复用：用户类型 1Customer  2Admin
 	int Q_NUM;		//排队号码
 	int W_NUM;		//前车等待数量
-	double COST;	//充电费用
+	double COST;	//充电费用	复用：当前电池电量
 	double BatteryCap;	//电池总容量
-	double BALANCE;	//余额			复用：充电量
+	double BALANCE;	//余额			复用：请求充电量
 	int REPLY;		//响应报文使用 表示请求结果		复用：充电桩编号
+	char output[200];//响应结果，直接输出
 };
 
 extern struct Info send_info, recv_info;
