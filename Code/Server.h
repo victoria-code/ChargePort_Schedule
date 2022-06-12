@@ -12,6 +12,57 @@ extern TSocket server_sock;
 //充电桩数目为5，编号为0~1代表快充，编号为2~4代表慢充
 #define CHARGEPORT_NUM 5
 
+//用户数据库条目
+struct usrEntry {
+    string usrname;
+    string passwd;//密码sha1值
+    string role;//customer 或 admin
+    int balance;//余额
+};
+
+//日志条目
+struct logEntry {
+    string start_time;//开始充电时间
+    string usrname;
+    int SID;//充电桩ID
+    string queueNum;//排队号码
+    int mode;//充电模式
+    int time;//实际充电时间
+    int cost;//金额
+};
+
+//数据库更新
+class DBupdate {
+public:
+    /*数据库初始化*/
+    DBupdate();
+
+    /*数据库条目解析*/
+    int entryResolve(usrEntry* uE, string line);//用户条目
+    int entryResolve(logEntry* lE, string line);//日志条目
+
+    //数据库所有用户信息
+    map<string, usrEntry*>usrData;
+
+    //服务日志
+    map<string, vector<logEntry*>>logData;
+
+    /*用户信息维护*/
+    int addUser(usrEntry* data); //新增用户     
+
+    /*充电日志*/
+    int addLogEntry(logEntry* data);//新增日志条目
+
+    //数据库更新
+    int update();
+
+    //数据库条目构造
+    string getEntry(usrEntry* data);//用户条目
+    string getEntry(logEntry* data);//日志条目
+};
+
+
+
 class Server{
     public:
 
@@ -71,55 +122,6 @@ class Server{
 };
 
 
-//数据库更新
-class DBupdate{
-    public:
-        /*数据库初始化*/
-        DBupdate();
-
-        /*数据库条目解析*/
-        int entryResolve(usrEntry* uE,string line);//用户条目
-        int entryResolve(logEntry* lE,string line);//日志条目
-
-        //数据库所有用户信息
-        map<string,usrEntry*>usrData;
-
-        //服务日志
-        map<string,vector<logEntry*>>logData;
-
-        /*用户信息维护*/
-        int addUser(usrEntry *data); //新增用户     
-        
-        /*充电日志*/
-        int addLogEntry(logEntry *data);//新增日志条目
-
-        //数据库更新
-        int update();
-
-        //数据库条目构造
-        string getEntry(usrEntry *data);//用户条目
-        string getEntry(logEntry *data);//日志条目
-};
-
-
-//用户数据库条目
-struct usrEntry{
-    string usrname;
-    string passwd;//密码sha1值
-    string role;//customer 或 admin
-    int balance;//余额
-};
-
-//日志条目
-struct logEntry{
-    string start_time;//开始充电时间
-    string usrname;
-    int SID;//充电桩ID
-    string queueNum;//排队号码
-    int mode;//充电模式
-    int time;//实际充电时间
-    int cost;//金额
-};
 
 
 //以字符ch为分隔符字符串拆分
