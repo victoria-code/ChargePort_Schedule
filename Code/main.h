@@ -9,6 +9,7 @@
 #include<fstream>
 #include<map>
 #include<iterator>
+#include<mutex>
 
 //可变参数
 #define MAX_WAIT_NUM 6  //等候区最大车位容量
