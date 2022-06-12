@@ -30,7 +30,7 @@ Server::Server(int PID) {
 //服务器下线前同步数据库
 Server::~Server()
 {
-    this->database.update();
+    database.update();
 }
 
 /*database Interface*/
@@ -38,9 +38,9 @@ Server::~Server()
 //用户信息查询
 int Server::usrFind(string usrname, usrEntry *res)
 {
-    auto it = this->database.usrData.find(usrname);
+    auto it = database.usrData.find(usrname);
     //用户不存在
-    if (it == this->database.usrData.end())
+    if (it == database.usrData.end())
     {
         res = nullptr;
         return -1;
@@ -52,8 +52,8 @@ int Server::usrFind(string usrname, usrEntry *res)
 //用户充电记录查询
 int Server::logFind(string usrname, vector<logEntry *> &res)
 {
-    auto it = this->database.logData.find(usrname);
-    if (it == this->database.logData.end())
+    auto it = database.logData.find(usrname);
+    if (it == database.logData.end())
     {
         cout << "the usr " << usrname << " has no charge log currently." << endl;
         return -1;
@@ -65,24 +65,24 @@ int Server::logFind(string usrname, vector<logEntry *> &res)
 //用户信息更新<新增用户，用户信息改变，用户注销>
 int Server::usrDataUpdate(bool to_delete, usrEntry *uE)
 {
-    auto it = this->database.usrData.find(uE->usrname);
+    auto it = database.usrData.find(uE->usrname);
 
     //注销
     if (to_delete)
     {
         //待注销的用户名不存在
-        if (it == this->database.usrData.end())
+        if (it == database.usrData.end())
         {
             cout << "待注销的账户<" << uE->usrname << ">不存在！" << endl;
             return 0;
         }
-        this->database.usrData.erase(it);
+        database.usrData.erase(it);
         cout << "账户<" << uE->usrname << ">注销成功！" << endl;
         return 0;
     }
 
     //注册 or 用户信息改变
-    this->database.usrData[uE->usrname] = uE;
+    database.usrData[uE->usrname] = uE;
     return 0;
 }
 
@@ -111,9 +111,10 @@ void Server::sendDetail(ChargeTablePool *next)
     res += "电费：" + to_string(next->ChargeTable.ElectCost) + "\n";
     res += "总费用:" + to_string(next->ChargeTable.ChargeCost) + "\n";
     res += "--------------------------------------------------------\n";
-    cout << res;
     //扣费
     balanceChange(next->ChargeTable.usrname, -next->ChargeTable.ChargeCost);
+    send_info.BALANCE=database.usrData[next->ChargeTable.usrname]->balance;
+    res += "<扣费成功>:当前余额："+to_string(send_info.BALANCE)+"元\n";
     strcpy(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
@@ -149,7 +150,7 @@ void Server::forwardRequet(string usrname, int SID)
 int Server::replyClient(Info usrInfo)
 {
     string Usrname = string(usrInfo.UID);
-    usrEntry *uE = this->database.usrData[Usrname];
+    usrEntry *uE = database.usrData[Usrname];
     string qNum;
     switch (usrInfo.cmd)
     {
@@ -274,7 +275,7 @@ int Server::signUp(string usrname, string passwd, string role)
         return -1;
     }
     //用户名已存在
-    else if (this->database.usrData.find(usrname) != this->database.usrData.end())
+    else if (database.usrData.find(usrname) != database.usrData.end())
     {
         res = "用户名已存在！\n";
         strcpy(send_info.output, res.c_str());
@@ -301,27 +302,23 @@ int Server::signUp(string usrname, string passwd, string role)
 int Server::balanceChange(string usrname, int amount)
 {
     strcpy(send_info.UID, usrname.c_str());
-    auto it = this->database.usrData.find(usrname);
+    auto it = database.usrData.find(usrname);
     string res;
 
     //充值
     if (amount > 0)
     {
         it->second->balance = amount;
-        res = "<充值成功>: ";
+        res = "<"+ usrname + "充值成功>: ";
+        res += "当前余额为" + to_string(it->second->balance) + "元!\n";
+        cout<<res;
     }
     //扣费
     if (amount < 0)
     {
         it->second->balance += amount;
-        res = "<扣费成功>: ";
+        
     }
-    res += "当前余额为" + to_string(it->second->balance) + "元!\n";
-    send_info.BALANCE = it->second->balance;
-    strcpy(send_info.output, res.c_str());
-    send_info.REPLY = 0;
-    server_sock.Send(send_info);
-    cout << res;
     return 0;
 }
 
