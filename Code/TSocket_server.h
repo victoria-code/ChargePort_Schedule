@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-#include "head.h"
+#include "main.h"
 
 #define BUF_SIZE 200
 
