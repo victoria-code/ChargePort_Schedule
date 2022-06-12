@@ -474,7 +474,7 @@ int Customer::getQueueRes()
 	mutexUsr.unlock();
 	mutexSock.unlock();
 	CarReply *reply = this->car->Reply;
-	cout << "您当前的排队号码为: " << reply->queueNum << ", 前方还有" << reply->waitingNum << "辆车在等待" << endl;
+	cout << "您当前的排队号码为: " << reply->queueNum << ", 前方还有" << reply->num << "辆车在等待" << endl;
 	return 1;
 }
 
@@ -492,7 +492,7 @@ int Customer::sendQueueInfoRequest()
 	//设置排队结果 
 	//此处只设置一项排队号码 因为其余已在申请充电时设置
 	this->car->Reply->num = recv_info.Q_NUM;
-	return 0; // test
+	return 0;
 }
 
 /*------Utils------*/
