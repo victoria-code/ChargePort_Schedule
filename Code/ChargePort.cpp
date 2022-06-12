@@ -15,8 +15,8 @@ int ChargeTableID = 0;         // 用来生成充电详单ID
 // StopThreadPool *StopHead;      // 结束充电请求池队列头
 // StopThreadPool *StopTail;      // 结束充电请求池队列尾
 
-ChargeTablePool *ChargeHead; // 回复充电详单请求队列头
-ChargeTablePool *ChargeTail; // 回复充电详单请求队列尾
+ChargeTablePool *ChargeTableHead; // 回复充电详单请求队列头
+ChargeTablePool *ChargeTableTail; // 回复充电详单请求队列尾
 
 std::mutex Chargelock;      // 添加充电过程到线程池的互斥锁
 std::mutex ChargeTablelock; // 添加充电详单到请求池的互斥锁
@@ -100,7 +100,7 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
     if (ChargePortPtr->stopCharging)
     {
         ChargePortPtr->stopCharging = false;
-        return;
+        return 0;
     }
     //把下一个waiting放入charging
     for (;;)
@@ -181,7 +181,7 @@ void BuildChargePortThread()
         Sth.detach();
     */
 }
-ChargePort::ChargePort(int CPID, bool fast, bool on, int WNum = 1, int CCnt = 0, double CCost = 0, double ECost = 0, long long CTime = 0, double TElect = 0, double SCost = 0)
+ChargePort::ChargePort(int CPID, bool fast, bool on, int WNum, int CCnt, double CCost, double ECost, long long CTime, double TElect, double SCost)
 {
     this->SID = CPID;
     this->IsFastCharge = fast;
