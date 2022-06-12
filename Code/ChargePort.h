@@ -5,10 +5,10 @@
 #include <vector>
 #include <list>
 #include <ctime>
-#include "windows.h"
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include "windows.h"
 
 typedef struct // 充电报表，for admin
 {
@@ -64,13 +64,13 @@ public:
     bool IsCharging;           // 为1充电区有车
     CarReply ChargingCarReply; // 正在充电的汽车的充电响应
     int CurElectReq;           // 正在充电的车待充电量
-    Car *ChargingCar;          // 正在充电的车
+    Car* ChargingCar;          // 正在充电的车
     bool stopCharging;         // 中止充电标志
 
     int WaitNum;                           //等待区车辆上限
     int WaitCount;                         //等待区车辆数目
     std::vector<CarReply> WaitingCarReply; // 当前等待处理的充电响应
-    std::vector<Car *> WaitingCar;         // 正在等待的车
+    std::vector<Car*> WaitingCar;         // 正在等待的车
 
     int ChargeCnt;        // 开机后累计充电次数
     double ChargeCost;    // 开机后累计总费用。单位/元
@@ -89,49 +89,49 @@ public:
     std::mutex CPlock; // 充电桩互斥锁
 
     ChargePort(int CPID,
-               bool fast,
-               bool on,
-               int WNum = 1,
-               int CCnt = 0,
-               double CCost = 0,
-               double ECost = 0,
-               long long CTime = 0,
-               double TElect = 0,
-               double SCost = 0);              // 充电桩编号，是否为快充，是否为开,等待区车辆上限,剩下的是开机前的统计数据,便于数据持久化和重载
+        bool fast,
+        bool on,
+        int WNum = 1,
+        int CCnt = 0,
+        double CCost = 0,
+        double ECost = 0,
+        long long CTime = 0,
+        double TElect = 0,
+        double SCost = 0);              // 充电桩编号，是否为快充，是否为开,等待区车辆上限,剩下的是开机前的统计数据,便于数据持久化和重载
     bool off();                                // 关闭充电桩，1为成功,失败是因为有车正在充电区
     bool on();                                 // 打开充电桩,1为成功
     CPStatusTable GetStatus();                 // 返回充电桩状态
     CarReply GetChargingCar();                 // 返回正在充电的车辆信息
-    bool AddCar(CarReply myreply, Car *mycar); // 增加一辆车,1为成功
-    bool DeleteCar(Car *mycar);                // 删除一辆车,1为成功,0为车不存在
+    bool AddCar(CarReply myreply, Car* mycar); // 增加一辆车,1为成功
+    bool DeleteCar(Car* mycar);                // 删除一辆车,1为成功,0为车不存在
     void PutWaitingToCharging();               //将Waiting的Car放入Charging，由充电桩自动调用，请勿在别的文件调用
 };
 
 struct ChargeThreadPool // 开始充电请求池
 {
     bool isAvailable;          // 是否有新的请求
-    ChargePort *ChargePortPtr; // 充电桩
-    Car *CarPtr;               // 汽车
-    CarReply *RepPtr;          // 充电请求
+    ChargePort* ChargePortPtr; // 充电桩
+    Car* CarPtr;               // 汽车
+    CarReply* RepPtr;          // 充电请求
     double ElectReq;           // 充电量
-    ChargeThreadPool *next;
+    ChargeThreadPool* next;
 };
 
 struct ChargeTablePool // 开始返回详单请求池
 {
     bool isAvailable;      //是否有新的请求
     CostTable ChargeTable; //充电详单
-    ChargeTablePool *next; //链表的下一个位置
+    ChargeTablePool* next; //链表的下一个位置
 };
 
-extern ChargeTablePool *ChargeTableHead; // 回复充电详单请求队列头
-extern ChargeTablePool *ChargeTableTail; // 回复充电详单请求队列尾
+extern ChargeTablePool* ChargeTableHead; // 回复充电详单请求队列头
+extern ChargeTablePool* ChargeTableTail; // 回复充电详单请求队列尾
 extern std::mutex ChargeTablelock;       //充电详单请求互斥锁
 
-int ChargeProc(ChargePort *ChargePortPtr,
-               Car *CarPtr,
-               CarReply *RepPtr,
-               double ElectReq); //一个充电线程：充电桩指针，车指针，充电报表指针，充电量
+int ChargeProc(ChargePort* ChargePortPtr,
+    Car* CarPtr,
+    CarReply* RepPtr,
+    double ElectReq); //一个充电线程：充电桩指针，车指针，充电报表指针，充电量
 void ChargeThread();             //一个对线程池循环处理的线程
 void BuildChargePortThread();    // 在服务器开始时调用，启动线程管理，即对充电的模拟
 #endif
