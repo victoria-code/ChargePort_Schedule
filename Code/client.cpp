@@ -23,17 +23,17 @@ int Client::logIN()
 	suc = sendLogInRequest(usrname, password);
 
 	//提示登录成功/失败信息
-	// suc=1表示成功，2表示用户名错误，3表示密码错误
-	while (suc != 1)
+	// suc=0表示成功，-1表示用户名错误，-2表示密码错误
+	while (suc != 0)
 	{
-		if (suc == 2)
+		if (suc == -1)
 		{
 			cout << "登录失败，请检查用户名是否正确" << endl;
 			cout << "重新输入用户名:";
 			while (getline(cin, usrname), usrname == "")
 				;
 		}
-		else if (suc == 3)
+		else if (suc == -2)
 		{
 			cout << "登录失败，请检查密码是否正确" << endl;
 			cout << "重新输入密码:";
@@ -73,8 +73,7 @@ int Client::sendLogInRequest(string usrname, string password)
 	else
 		cur_usr = new Admin();
 
-	// return recv_info.REPLY;   //test
-	return 1;
+	return recv_info.REPLY;
 }
 
 int Client::signUp()
@@ -102,19 +101,24 @@ int Client::signUp()
 
 	//向服务器发送注册申请
 	int suc = sendSignUpRequest(usrname, password, atoi(id.c_str()));
-	if (!suc)
-		cout << "注册失败，此用户名不可用" << endl;
-	else 
-		cout << "注册成功！" << endl;
+	while(suc != 0)
+	{
+		if(suc == -1)
+			cout << "注册失败，用户名长度必须在5~20之间" << endl;
+		else if(suc == -2)
+			cout << "注册失败，此用户名已被使用" << endl;
+		
+		cout << "重新输入用户名: ";
+		while (getline(cin, usrname), usrname == "");
+		suc = sendSignUpRequest(usrname, password, atoi(id.c_str()));
+	}
 
-	system("pause");
+	cout << "注册成功！" << endl;
 	return 0;//注册后返回主界面 暂不登录
 }
 
 int Client::sendSignUpRequest(string usrname, string password, int type)
 {
-	return 1; // test
-
 	send_info.cmd = SIGN_UP;
 	strcpy_s(send_info.UID, usrname.c_str());
 	strcpy_s(send_info.PWD, password.c_str());
@@ -125,8 +129,7 @@ int Client::sendSignUpRequest(string usrname, string password, int type)
 	while (strcmp(recv_info.UID, usrname.c_str()))
 		client_sock.Recv(recv_info);// 确认是否是发给自己的
 
-
-	//return recv_info.REPLY;   //test
+	return recv_info.REPLY;
 }
 
 
