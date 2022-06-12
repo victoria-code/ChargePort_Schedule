@@ -1,19 +1,5 @@
 #include "Server.h"
 
-int main(){
-	Server server;
-    //新建线程读取充电桩返回的充电详单并进行调度
-    thread withChargePort(recvCostTable,server);
-    withChargePort.detach();
-    for (;;)
-    {
-        server_sock.Recv(recv_info);
-        server.replyClient(recv_info);
-    }
-	return 0;
-}
-
-
 //接收充电桩生成的充电详单并返回给对应的用户
 //监测充电桩空闲状态并进行叫号、调度
 int recvCostTable(Server& server) {
@@ -88,3 +74,19 @@ int recvCostTable(Server& server) {
         }
     }
 }
+
+int main() {
+    Server server;
+    //新建线程读取充电桩返回的充电详单并进行调度
+    thread withChargePort(recvCostTable, server);
+    withChargePort.detach();
+    for (;;)
+    {
+        server_sock.Recv(recv_info);
+        server.replyClient(recv_info);
+    }
+    return 0;
+}
+
+
+
