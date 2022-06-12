@@ -56,7 +56,7 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
         ServicePrice = SERVICE_PRICE * ElectNow;
         ChargePortPtr->ChargeTime = start_ChargeTime + time;
         ChargePortPtr->TotalElect = start_TotalElect + ElectNow;
-        ChargePortPtr->CurElectReq=min(ElectReq-ElectNow,CarPtr->BatteryCap-CarPtr->BatteryNow);
+        ChargePortPtr->CurElectReq = min(ElectReq - ElectNow, CarPtr->BatteryCap - CarPtr->BatteryNow);
         ChargePortPtr->ElectCost = start_ElectCost + ElectPrice;
         ChargePortPtr->ServiceCost = start_ServiceCost + ServicePrice;
         ChargePortPtr->ChargeCost = ChargePortPtr->ServiceCost + ChargePortPtr->ElectCost;
@@ -68,6 +68,7 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
             break;
         }
     }
+
     // 更新一张充电表
     CostTable costtable{++ChargeTableID,
                         time(NULL),
@@ -95,13 +96,28 @@ int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double 
     ChargeTableTail->isAvailable = true;
     ChargeTableTail = nextct;
     ChargeTablelock.unlock();
-
-    ChargePortPtr->stopCharging = false;
+    // 若存在StopCharging则直接结束，deleteCar负责调度waiting和charging
+    if (ChargePortPtr->stopCharging)
+    {
+        ChargePortPtr->stopCharging = false;
+        return;
+    }
+    //把下一个waiting放入charging
+    for (;;)
+    {
+        if (ChargePortPtr->CPlock.try_lock())
+        {
+            break;
+        }
+    }
+    if (ChargePortPtr->WaitCount != 0)
+        ChargePortPtr->PutWaitingToCharging();
+    else
+    {
+        ChargePortPtr->IsCharging = false;
+    }
+    ChargePortPtr->CPlock.try_lock();
     return 0;
-}
-int aaa(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
-{
-    return 1;
 }
 void ChargeThread()
 {
@@ -134,7 +150,9 @@ void BuildChargePortThread()
     // 初始化一个空的充电桩状态表
     NULLStatusTable.SID = NULLStatusTable.ChargeCnt = 0;
     NULLStatusTable.OnState = NULLStatusTable.IsCharging = false;
-    NULLStatusTable.IsWaiting = NULLStatusTable.IsFastCharge = false;
+    NULLStatusTable.WaitCount = 0;
+    NULLStatusTable.WaitNum = 1;
+    NULLStatusTable.IsFastCharge = false;
     NULLStatusTable.ChargeCost = NULLStatusTable.ChargeTime = 0;
     NULLStatusTable.TotalElect = NULLStatusTable.ServiceCost = NULLStatusTable.ElectCost = 0;
     NULLStatusTable.TableTime = time(NULL);
@@ -163,23 +181,33 @@ void BuildChargePortThread()
         Sth.detach();
     */
 }
-ChargePort::ChargePort(int CPID, bool fast, bool on, int CCnt = 0, double CCost = 0, double ECost = 0, long long CTime = 0, double TElect = 0, double SCost = 0)
+ChargePort::ChargePort(int CPID, bool fast, bool on, int WNum = 1, int CCnt = 0, double CCost = 0, double ECost = 0, long long CTime = 0, double TElect = 0, double SCost = 0)
 {
     this->SID = CPID;
     this->IsFastCharge = fast;
     this->OnState = on;
-    IsCharging = IsWaiting = false;
+    WaitNum = WNum;
+    WaitCount = 0;
+    IsCharging = false;
     ChargeCnt = CurElectReq = 0;
     ChargingCarReply = NULLCarReply;
-    WaitingCarReply = NULLCarReply;
+    WaitingCarReply.clear();
     ChargingCar = NULL;
-    WaitingCar = NULL;
-    ChargeCnt = CCnt;
-    ChargeCost = CCost;
-    ElectCost = ECost;
-    ChargeTime = CTime;
-    TotalElect = TElect;
-    ServiceCost = SCost;
+    WaitingCar.clear();
+
+    PastChargeCnt = CCnt;
+    PastChargeCost = CCost;
+    PastElectCost = ECost;
+    PastChargeTime = CTime;
+    PastTotalElect = TElect;
+    PastServiceCost = SCost;
+
+    ChargeCnt = 0;
+    ChargeCost = 0;
+    ElectCost = 0;
+    ChargeTime = 0;
+    TotalElect = 0;
+    ServiceCost = 0;
 }
 bool ChargePort::on()
 {
@@ -203,7 +231,7 @@ bool ChargePort::off()
             break;
         }
     }
-    if (IsCharging || IsWaiting) // 有车在充电区时失败
+    if (IsCharging || WaitCount != 0) // 有车在充电区时失败
     {
         return 0;
     }
@@ -218,7 +246,8 @@ CPStatusTable ChargePort::GetStatus()
     a.IsFastCharge = IsFastCharge; // 快充还是慢充，快充为1,慢充为0
     a.OnState = OnState;           // 开关状态，true开false关
     a.IsCharging = IsCharging;     // 为 true 则充电区有车
-    a.IsWaiting = IsWaiting;       // 为 true 则等待区有车
+    a.WaitNum = WaitNum;           // 等待区车辆上限
+    a.WaitCount = WaitCount;       // 等待区当前车辆数
     a.ChargeCnt = ChargeCnt;       // 累计充电次数
     a.ChargeCost = ChargeCost;     // 累计总费用。单位/元
     a.ChargeTime = ChargeTime;     // 累计充电时长。单位/min
@@ -246,24 +275,6 @@ CarReply ChargePort::GetChargingCar()
     }
     CPlock.unlock();
 }
-CarReply ChargePort::GetWaitingCar()
-{
-    for (;;)
-    {
-        if (CPlock.try_lock())
-        {
-            break;
-        }
-    }
-    if (IsWaiting)
-        return WaitingCarReply;
-    else
-    {
-        NULLCarReply.Ask.StWaitTime = time(NULL);
-        return NULLCarReply;
-    }
-    CPlock.unlock();
-}
 bool ChargePort::AddCar(CarReply myreply, Car *mycar)
 {
     for (;;)
@@ -275,15 +286,15 @@ bool ChargePort::AddCar(CarReply myreply, Car *mycar)
     }
     if (IsCharging)
     {
-        if (IsWaiting)
+        if (WaitNum <= WaitCount)
         {
             return false;
         }
         else
         {
-            IsWaiting = true;
-            WaitingCar = mycar;
-            WaitingCarReply = myreply;
+            ++WaitCount;
+            WaitingCar.push_back(mycar);
+            WaitingCarReply.push_back(myreply);
         }
     }
     else
@@ -323,11 +334,28 @@ bool ChargePort::DeleteCar(Car *mycar)
             break;
         }
     }
-    if (mycar == WaitingCar)
+    int id = -1;
+    for (int i = 0; i < WaitCount; ++i)
     {
-        WaitingCar = NULL;
-        WaitingCarReply = NULLCarReply;
-        IsWaiting = false;
+        if (WaitingCar[i] == mycar)
+        {
+            id = i;
+            break;
+        }
+    }
+    if (id != -1)
+    {
+        for (int i = id; i < WaitCount - 1; ++i)
+        {
+            WaitingCar[i] = WaitingCar[i + 1];
+        }
+        WaitingCar.pop_back();
+        for (int i = id; i < WaitCount - 1; ++i)
+        {
+            WaitingCarReply[i] = WaitingCarReply[i + 1];
+        }
+        WaitingCarReply.pop_back();
+        --WaitCount;
         return true;
     }
     else if (mycar == ChargingCar)
@@ -340,33 +368,10 @@ bool ChargePort::DeleteCar(Car *mycar)
             if (!stopCharging)
                 break;
         }
-        if (IsWaiting)
+        //把下一个waiting放入charging
+        if (WaitCount != 0)
         {
-            ChargingCar = WaitingCar;
-            ChargingCarReply = WaitingCarReply;
-
-            WaitingCar = NULL;
-            WaitingCarReply = NULLCarReply;
-            IsCharging = true;
-            IsWaiting = false;
-            //将一个新的充电过程放到充电线程池。
-            for (;;)
-            {
-                if (Chargelock.try_lock())
-                {
-                    break;
-                }
-            }
-            ChargeThreadPool *nextth = new ChargeThreadPool;
-            nextth->isAvailable = false;
-            nextth->ChargePortPtr = this;
-            nextth->CarPtr = mycar;
-            nextth->RepPtr = &(this->ChargingCarReply);
-            nextth->ElectReq = this->ChargingCarReply.Ask.ChargeCap;
-            ChargeTail->next = nextth;
-            ChargeTail->isAvailable = true;
-            ChargeTail = nextth;
-            Chargelock.unlock();
+            PutWaitingToCharging();
         }
         else
         {
@@ -376,4 +381,42 @@ bool ChargePort::DeleteCar(Car *mycar)
     }
     CPlock.unlock();
     return false;
+}
+void ChargePort::PutWaitingToCharging()
+{
+    for (;;)
+    {
+        if (Chargelock.try_lock())
+        {
+            break;
+        }
+    }
+
+    ChargingCar = WaitingCar[0];
+    ChargingCarReply = WaitingCarReply[0];
+    IsCharging = true;
+
+    ChargeThreadPool *nextth = new ChargeThreadPool;
+    nextth->isAvailable = false;
+    nextth->ChargePortPtr = this;
+    nextth->CarPtr = ChargingCar;
+    nextth->RepPtr = &(this->ChargingCarReply);
+    nextth->ElectReq = this->ChargingCarReply.Ask.ChargeCap;
+    ChargeTail->next = nextth;
+    ChargeTail->isAvailable = true;
+    ChargeTail = nextth;
+
+    for (int i = 0; i < WaitCount - 1; ++i)
+    {
+        WaitingCar[i] = WaitingCar[i + 1];
+    }
+    WaitingCar.pop_back();
+    for (int i = 0; i < WaitCount - 1; ++i)
+    {
+        WaitingCarReply[i] = WaitingCarReply[i + 1];
+    }
+    WaitingCarReply.pop_back();
+    --WaitCount;
+
+    Chargelock.unlock();
 }
