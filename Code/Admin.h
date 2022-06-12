@@ -2,7 +2,7 @@
  * @Author: yummy
  * @Date: 2022-06-08 17:35:24
  * @LastEditors: yummy
- * @LastEditTime: 2022-06-12 15:40:32
+ * @LastEditTime: 2022-06-12 17:07:28
  * @Description: 请填写简介
  */
 #include "User.h"
@@ -22,7 +22,7 @@ public:
 
     
     // 登录后的操作界面
-    void Menu();
+    void showMenu();
     
     /*with chargePort*/
     //查询充电桩信息(充电桩状态、排队车辆信息、报表)
