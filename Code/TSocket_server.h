@@ -1,4 +1,5 @@
-#include <WinSock2.h>
+//#include <WinSock2.h>
+#include "windows.h"
 #include <string>
 #include <iostream>
 using namespace std;

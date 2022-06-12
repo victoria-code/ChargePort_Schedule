@@ -2,7 +2,7 @@
 
 TSocket server_sock;
 
- TSocket::TSocket()
+TSocket::TSocket()
 {
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
@@ -39,50 +39,45 @@ TSocket server_sock;
 }
 
 
- void TSocket::Send(struct Info& send_info)
- {
-	 send(clntSock, (char*)&send_info, sizeof(send_info), 0);
-	 memset(&send_info, 0, sizeof(send_info));	//发送后清空结构体
- }
+void TSocket::Send(struct Info& send_info)
+{
+	send(clntSock, (char*)&send_info, sizeof(send_info), 0);
+	memset(&send_info, 0, sizeof(send_info));	//发送后清空结构体
+}
 
 
- // 将接收缓冲区复制到msg_recv
- void TSocket::Recv(struct Info& recv_info)
- {
-	 memset(bufRecv, 0, BUF_SIZE);	//接收之前重置缓冲区！
-	 memset(&recv_info, 0, sizeof(recv_info));	//清空结构体
+// 将接收缓冲区复制到msg_recv
+void TSocket::Recv(struct Info& recv_info)
+{
+	memset(bufRecv, 0, BUF_SIZE);	//接收之前重置缓冲区！
+	memset(&recv_info, 0, sizeof(recv_info));	//清空结构体
 
-	 int strLen = recv(clntSock, bufRecv, BUF_SIZE, 0);
-	 if (strLen <= 0)
-	 {
-		 cout << "Receive from Client Error!" << endl;
-	 }
+	int strLen = recv(clntSock, bufRecv, BUF_SIZE, 0);
+	if (strLen <= 0)
+	{
+		cout << "Receive from Client Error!" << endl;
+	}
 
-	 memcpy(&recv_info, bufRecv, sizeof(recv_info));	//拷贝
+	memcpy(&recv_info, bufRecv, sizeof(recv_info));	//拷贝
 
-	 //输出接收到的结构体
-	 cout << "Info type:" << recv_info.info_type << endl
-		 << "Name:" << recv_info.name << endl
-		 << "Password:" << recv_info.password << endl
-		 << "Banlance:" << recv_info.banlance << endl ;
-	 return;
- }
+	return;
+}
 
 
- TSocket::~TSocket()
+TSocket::~TSocket()
 {
 
 }
 
 
- void TSocket::Close()
- {
-	 server_sock.Send(send_info);
+void TSocket::Close()
+{
+	server_sock.Send(send_info);
 
-	 closesocket(sock);
-	 closesocket(clntSock);
-	 WSACleanup();
+	closesocket(sock);
+	closesocket(clntSock);
+	WSACleanup();
 
-	 cout << endl << "连接已断开..." << endl;
- }
+	cout << endl << "连接已断开..." << endl;
+}
 

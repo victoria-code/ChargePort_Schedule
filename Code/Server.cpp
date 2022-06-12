@@ -19,7 +19,7 @@ Server::Server()
     }
     //初始化排队信息
     FNum = TNum = 0;
-    
+
 }
 
 //
@@ -36,7 +36,7 @@ Server::~Server()
 /*database Interface*/
 
 //用户信息查询
-int Server::usrFind(string usrname, usrEntry *res)
+int Server::usrFind(string usrname, usrEntry* res)
 {
     auto it = database.usrData.find(usrname);
     //用户不存在
@@ -50,7 +50,7 @@ int Server::usrFind(string usrname, usrEntry *res)
 }
 
 //用户充电记录查询
-int Server::logFind(string usrname, vector<logEntry *> &res)
+int Server::logFind(string usrname, vector<logEntry*>& res)
 {
     auto it = database.logData.find(usrname);
     if (it == database.logData.end())
@@ -63,7 +63,7 @@ int Server::logFind(string usrname, vector<logEntry *> &res)
 }
 
 //用户信息更新<新增用户，用户信息改变，用户注销>
-int Server::usrDataUpdate(bool to_delete, usrEntry *uE)
+int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
 {
     auto it = database.usrData.find(uE->usrname);
 
@@ -88,20 +88,20 @@ int Server::usrDataUpdate(bool to_delete, usrEntry *uE)
 
 
 //向用户发送对应的充电详单并进行扣费
-void Server::sendDetail(ChargeTablePool *next)
+void Server::sendDetail(ChargeTablePool* next)
 {
     send_info.cmd = DETAIL;
-    strcpy(send_info.UID, next->ChargeTable.usrname.c_str());
+    strcpy_s(send_info.UID, next->ChargeTable.usrname.c_str());
 
     string res = "<<<<<<<<<<<<<<<<<<<<充电详单>>>>>>>>>>>>>>>>>>>>";
     res += "详单编号: " + to_string(next->ChargeTable.ChargeID) + "\n";
     res += "详单生成时间: " + to_string(next->ChargeTable.CreateTableTime) + "\n";
     res += "充电桩编号: " + to_string(next->ChargeTable.SID) + "\n";
     res += "充电模式: ";
-    if(next->ChargeTable.IsFastCharge)
-        res+="FAST\n";
-    else 
-        res+="SLOW\n";
+    if (next->ChargeTable.IsFastCharge)
+        res += "FAST\n";
+    else
+        res += "SLOW\n";
     res += "用户名:" + next->ChargeTable.usrname + "\n";
     res += "启动时间:" + to_string(next->ChargeTable.StartTime) + "\n";
     res += "停止时间:" + to_string(next->ChargeTable.End_Time) + "\n";
@@ -113,9 +113,9 @@ void Server::sendDetail(ChargeTablePool *next)
     res += "--------------------------------------------------------\n";
     //扣费
     balanceChange(next->ChargeTable.usrname, -next->ChargeTable.ChargeCost);
-    send_info.BALANCE=database.usrData[next->ChargeTable.usrname]->balance;
-    res += "<扣费成功>:当前余额："+to_string(send_info.BALANCE)+"元\n";
-    strcpy(send_info.output, res.c_str());
+    send_info.BALANCE = database.usrData[next->ChargeTable.usrname]->balance;
+    res += "<扣费成功>:当前余额：" + to_string(send_info.BALANCE) + "元\n";
+    strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
 }
@@ -125,7 +125,7 @@ void Server::forwardRequet(string usrname, int SID)
 {
     CarReply reply;
     string qNum = queueData[usrname].first;
-    CarAsk *ask = this->CUser[usrname];
+    CarAsk* ask = this->CUser[usrname];
     reply.Ask = *(ask);
     reply.SID = SID;
     reply.num = cData[SID]->IsCharging; //当前排队队列编号 0 or 1
@@ -133,7 +133,7 @@ void Server::forwardRequet(string usrname, int SID)
     reply.queueNum = qNum;              //排队号码
     reply.waitingNum = reply.num;       //前车等待数量0 or 1
 
-    Car *car;
+    Car* car=new Car();
     car->usrname = usrname;
     car->BatteryCap = ask->BatteryCap;
     car->BatteryNow = ask->BatteryNow;
@@ -150,7 +150,7 @@ void Server::forwardRequet(string usrname, int SID)
 int Server::replyClient(Info usrInfo)
 {
     string Usrname = string(usrInfo.UID);
-    usrEntry *uE = database.usrData[Usrname];
+    usrEntry* uE = database.usrData[Usrname];
     string qNum;
     switch (usrInfo.cmd)
     {
@@ -175,10 +175,12 @@ int Server::replyClient(Info usrInfo)
         break;
 
         // cmd: 104 充电请求
-    case CHARGE_REQUEST:
-        CarAsk* ask;
+    case CHARGE_REQUEST: 
+    {
+        CarAsk* ask = nullptr;
         resolveRequest(usrInfo, ask);
         copeChargeRequest(ask);
+    }
         break;
 
         // cmd: 105 取消充电
@@ -217,19 +219,20 @@ int Server::replyClient(Info usrInfo)
         closeCP(Usrname, usrInfo.REPLY);
         break;
     }
+    return 0;
 }
 
 // cmd:100 登录验证,登录成功则获取用户信息
-int Server::logIn(string usrname, string passwd, usrEntry *uE)
+int Server::logIn(string usrname, string passwd, usrEntry* uE)
 {
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = LOG_IN;
     string res;
     //检验用户是否存在
     if (Server::usrFind(usrname, uE) != 0)
     {
         res = "用户名<" + usrname + ">不存在！" + "\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
 
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -240,7 +243,7 @@ int Server::logIn(string usrname, string passwd, usrEntry *uE)
     else if (passwd != uE->passwd)
     {
         res = "用户名和密码不匹配！\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info);
         cout << res;
@@ -250,7 +253,7 @@ int Server::logIn(string usrname, string passwd, usrEntry *uE)
     else
     {
         res = "登录成功！\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
         cout << res;
@@ -261,14 +264,14 @@ int Server::logIn(string usrname, string passwd, usrEntry *uE)
 // cmd:101 注册认证
 int Server::signUp(string usrname, string passwd, string role)
 {
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = SIGN_UP;
     string res;
     //用户名长度非法
     if (usrname.size() > 20 || usrname.size() < 2)
     {
         res = "用户名长度必须在5~20之间!\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
@@ -278,7 +281,7 @@ int Server::signUp(string usrname, string passwd, string role)
     else if (database.usrData.find(usrname) != database.usrData.end())
     {
         res = "用户名已存在！\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info);
         cout << res;
@@ -286,13 +289,13 @@ int Server::signUp(string usrname, string passwd, string role)
     }
 
     res = "注册成功!\n";
-    usrEntry *uE = new struct usrEntry();
+    usrEntry* uE = new struct usrEntry();
     uE->usrname = usrname;
     uE->passwd = passwd;
     uE->role = role;
     uE->balance = 0;
     usrDataUpdate(false, uE);
-    strcpy(send_info.output, res.c_str());
+    strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
     return 0;
@@ -301,7 +304,7 @@ int Server::signUp(string usrname, string passwd, string role)
 // cmd:102 充值、扣费（amount为正表示充值后的余额，为负表示要扣除的金额）
 int Server::balanceChange(string usrname, int amount)
 {
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     auto it = database.usrData.find(usrname);
     string res;
 
@@ -309,15 +312,15 @@ int Server::balanceChange(string usrname, int amount)
     if (amount > 0)
     {
         it->second->balance = amount;
-        res = "<"+ usrname + "充值成功>: ";
+        res = "<" + usrname + "充值成功>: ";
         res += "当前余额为" + to_string(it->second->balance) + "元!\n";
-        cout<<res;
+        cout << res;
     }
     //扣费
     if (amount < 0)
     {
         it->second->balance += amount;
-        
+
     }
     return 0;
 }
@@ -325,12 +328,12 @@ int Server::balanceChange(string usrname, int amount)
 // cmd:103 用户注销
 int Server::deleteUsr(string usrname)
 {
-    usrEntry *uE;
+    usrEntry* uE=NULL;
     uE->usrname = usrname;
     send_info.cmd = DELETE_USER;
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     string res = "用户<" + usrname + ">注销成功!\n";
-    strcpy(send_info.output, res.c_str());
+    strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
     cout << res;
@@ -338,16 +341,16 @@ int Server::deleteUsr(string usrname)
 }
 
 // cmd:104 处理等候区内车辆的充电申请
-int Server::copeChargeRequest(CarAsk *ask)
+int Server::copeChargeRequest(CarAsk* ask)
 {
-    strcpy(send_info.UID, ask->usrname.c_str());
+    strcpy_s(send_info.UID, ask->usrname.c_str());
     send_info.cmd = CHARGE_REQUEST;
     string res;
     //充电区内无法提交、修改用户请求
     if (CUser.find(ask->usrname) != CUser.end())
     {
         res = "车辆当前位于充电区，无法修改充电请求！";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
@@ -363,7 +366,7 @@ int Server::copeChargeRequest(CarAsk *ask)
             if (WUser.size() > MAX_WAIT_NUM)
             {
                 res = "当前等候区已满，无法处理新的用户请求！\n";
-                strcpy(send_info.output, res.c_str());
+                strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = -2;
                 server_sock.Send(send_info);
                 cout << res;
@@ -378,7 +381,7 @@ int Server::copeChargeRequest(CarAsk *ask)
                 this->queueData[ask->usrname].second = curWait;
                 WUser[ask->usrname] = ask;
                 res = "请求成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
-                strcpy(send_info.output, res.c_str());
+                strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
                 cout << res;
@@ -399,7 +402,7 @@ int Server::copeChargeRequest(CarAsk *ask)
                 this->queueData[ask->usrname].second = curWait;
                 WUser[ask->usrname] = ask;
                 res = "请求修改成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
-                strcpy(send_info.output, res.c_str());
+                strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
                 cout << res;
@@ -410,7 +413,7 @@ int Server::copeChargeRequest(CarAsk *ask)
             {
                 WUser[ask->usrname] = ask;
                 res = "请求修改成功！\n当前排队号码：" + queueData[ask->usrname].first + "\n本模式下前车等待数量： " + to_string(queueData[ask->usrname].second) + "\n";
-                strcpy(send_info.output, res.c_str());
+                strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
                 cout << res;
@@ -424,7 +427,7 @@ int Server::copeChargeRequest(CarAsk *ask)
 int Server::cancelCharge(string usrname)
 {
     send_info.cmd = CANCEL_REQUEST;
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     string res;
     auto qData = queueData.find(usrname);
 
@@ -432,7 +435,7 @@ int Server::cancelCharge(string usrname)
     if (qData == queueData.end())
     {
         res = "未找到用户" + usrname + "的充电请求!" + "\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
@@ -445,7 +448,7 @@ int Server::cancelCharge(string usrname)
         queueData.erase(usrname);
         WUser.erase(usrname);
         res = "取消充电成功，充电请求已删除！\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
         cout << res;
@@ -468,7 +471,7 @@ int Server::cancelCharge(string usrname)
     CUser.erase(usrname);
     queueData.erase(usrname);
     res = "充电取消成功！\n";
-    strcpy(send_info.output, res.c_str());
+    strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
     cout << res;
@@ -476,10 +479,10 @@ int Server::cancelCharge(string usrname)
 }
 
 // cmd:106 获取排队信息
-int Server::getQueueData(string usrname, string &qNum, int &curWait)
+int Server::getQueueData(string usrname, string& qNum, int& curWait)
 {
     send_info.cmd = GET_QUEUE_DATA;
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     string res;
 
     auto it = queueData.find(usrname);
@@ -487,7 +490,7 @@ int Server::getQueueData(string usrname, string &qNum, int &curWait)
     {
         send_info.Q_NUM = -1;
         res = "未找到用户<" + usrname + ">的充电请求！\n";
-        strcpy(send_info.output, res.c_str());
+        strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
@@ -500,7 +503,7 @@ int Server::getQueueData(string usrname, string &qNum, int &curWait)
     send_info.Q_NUM = stoi(qNum.substr(1));
     send_info.W_NUM = curWait;
     res = "排队号码：" + qNum + "前车等待数量" + to_string(curWait) + "\n";
-    strcpy(send_info.output, res.c_str());
+    strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
     cout << res;
@@ -516,6 +519,7 @@ string Server::queueNumGenerate(string usrname, int mode)
     else
         qNum = "T" + to_string(++TNum);
     queueData[usrname] = make_pair(qNum, -1);
+    return qNum;
 }
 
 //获取本模式下最新的前车等待数量信息
@@ -537,7 +541,7 @@ int Server::getCurWaitNum(string usrname)
                 if (i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
-            num += cData[0]->IsWaiting + cData[1]->IsWaiting;
+            /*num += cData[0]->IsWaiting + cData[1]->IsWaiting;*/
         }
         else
         {
@@ -547,7 +551,7 @@ int Server::getCurWaitNum(string usrname)
                 if (!i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
-            num += cData[2]->IsWaiting + cData[3]->IsWaiting + cData[4]->IsWaiting;
+          /*  num += cData[2]->IsWaiting + cData[3]->IsWaiting + cData[4]->IsWaiting;*/
         }
         return num;
     }
@@ -569,7 +573,7 @@ int Server::getCurWaitNum(string usrname)
 }
 
 //获取等候区内即将进入充电区的快充和慢充usrname(叫号）
-int Server::Calling(string &fUser, string &tUser)
+int Server::Calling(string& fUser, string& tUser)
 {
     fUser = "";
     tUser = "";
@@ -592,7 +596,7 @@ int Server::Calling(string &fUser, string &tUser)
 }
 
 //获取充电区内排队队列有空位且等待时间最短的充电桩
-int Server::getFreeCP(int &fSID, int &tSID, int &fTime, int &tTime)
+int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
 {
     //记录两种模式下总时间最短的充电桩及其时间
     fTime = tTime = INT32_MAX;
@@ -600,185 +604,191 @@ int Server::getFreeCP(int &fSID, int &tSID, int &fTime, int &tTime)
     for (int i = 0; i < CHARGEPORT_NUM; i++)
     {
         //当前充电桩队列已满
-        if (cData[i]->IsCharging && cData[i]->IsWaiting)
-            continue;
+     /*   if (cData[i]->IsCharging && cData[i]->IsWaiting)
+            continue;*/
         //当前充电桩无充电任务,则分配到充电桩
-        else if (!cData[i]->IsWaiting && !cData[i]->IsCharging)
-        {
-            if (cData[i]->IsFastCharge)
-            {
-                fSID = i;
-                fTime = 0;
-            }
-            else
-            {
-                tSID = i;
-                tTime = 0;
-            }
-        }
-        //当前充电桩排队队列只有1个空位
-        else if (cData[i]->IsWaiting)
-        {
-            if (cData[i]->IsFastCharge)
-            {
-                int cur = cData[i]->CurElectReq / FAST_POWER;
-                if (fTime > cur)
-                {
-                    fTime = cur;
-                    fSID = i;
-                }
-            }
-            else
-            {
-                int cur = cData[i]->CurElectReq / SLOW_POWER;
-                if (tTime > cur)
-                {
-                    tTime = cur;
-                    tSID = i;
-                }
-            }
-        }
+        //else if (!cData[i]->IsWaiting && !cData[i]->IsCharging)
+        //{
+        //    if (cData[i]->IsFastCharge)
+        //    {
+        //        fSID = i;
+        //        fTime = 0;
+        //    }
+        //    else
+        //    {
+        //        tSID = i;
+        //        tTime = 0;
+        //    }
+        //}
+        ////当前充电桩排队队列只有1个空位
+        //else if (cData[i]->IsWaiting)
+        //{
+        //    if (cData[i]->IsFastCharge)
+        //    {
+        //        int cur = cData[i]->CurElectReq / FAST_POWER;
+        //        if (fTime > cur)
+        //        {
+        //            fTime = cur;
+        //            fSID = i;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        int cur = cData[i]->CurElectReq / SLOW_POWER;
+        //        if (tTime > cur)
+        //        {
+        //            tTime = cur;
+        //            tSID = i;
+        //        }
+        //    }
+        //}
     }
+    return 0;
 }
 
 //提取充电请求
-int Server::resolveRequest(Info &usrInfo, CarAsk *ask)
+int Server::resolveRequest(Info& usrInfo, CarAsk* ask)
 {
+    if (ask == nullptr) {
+        ask = new CarAsk();
+    }
     ask->usrname = string(usrInfo.UID);
     ask->ChargeCap = usrInfo.BALANCE;
     ask->IsFastCharge = usrInfo.MODE;
     ask->BatteryCap = usrInfo.BatteryCap;
     ask->BatteryNow = usrInfo.COST; //暂时没有
+    return 0;
 }
 
 //cmd200: 获取充电桩状态信息
-int Server::getChargePortData(string usrname){
-    send_info.cmd=SPY_CHARGEPORT;
-    strcpy(send_info.UID,usrname.c_str());
-    string res="<<<<<<<<<<<<<<<<<<<<充电状态信息>>>>>>>>>>>>>>>>>>>>\n";
-    for(int i=0;i<CHARGEPORT_NUM;i++){
-        res+="充电桩编号："+to_string(i)+"\n";
-        res+="是否为快充："+to_string(cData[i]->IsFastCharge)+"\n";
-        res+="是否正常工作："+to_string(1)+"\n";
-        res+="是否已经启动"+to_string(cData[i]->OnState)+"\n";
-        res+="系统启动后累计充电次数："+to_string(-1)+"\n";
-        res+="系统启动后累计充电总时长："+to_string(-1)+"\n";
-        res+="系统启动后累计充电总电量："+to_string(-1)+"\n";
-        res+="----------------------------------------------------------------------\n";
+int Server::getChargePortData(string usrname) {
+    send_info.cmd = SPY_CHARGEPORT;
+    strcpy_s(send_info.UID, usrname.c_str());
+    string res = "<<<<<<<<<<<<<<<<<<<<充电状态信息>>>>>>>>>>>>>>>>>>>>\n";
+    for (int i = 0; i < CHARGEPORT_NUM; i++) {
+        res += "充电桩编号：" + to_string(i) + "\n";
+        res += "是否为快充：" + to_string(cData[i]->IsFastCharge) + "\n";
+        res += "是否正常工作：" + to_string(1) + "\n";
+        res += "是否已经启动" + to_string(cData[i]->OnState) + "\n";
+        res += "系统启动后累计充电次数：" + to_string(-1) + "\n";
+        res += "系统启动后累计充电总时长：" + to_string(-1) + "\n";
+        res += "系统启动后累计充电总电量：" + to_string(-1) + "\n";
+        res += "----------------------------------------------------------------------\n";
     }
-    send_info.REPLY=0;
-    strcpy(send_info.output,res.c_str());
-    cout<<res<<endl;
+    send_info.REPLY = 0;
+    strcpy_s(send_info.output, res.c_str());
+    cout << res << endl;
     server_sock.Send(send_info);
     return 0;
 }
 
 //cmd201:查看充电桩等候的车辆信息
-int Server::getCarData(string usrname){
-    send_info.cmd=WAIT_CAR_DATA;
-    strcpy(send_info.UID,usrname.c_str());
-    string res="<<<<<<<<<<<<<<<<<<<<充电桩等候服务车辆信息>>>>>>>>>>>>>>>>>>>>\n";
-    for(int i=0;i<CHARGEPORT_NUM;i++){
+int Server::getCarData(string usrname) {
+    send_info.cmd = WAIT_CAR_DATA;
+    strcpy_s(send_info.UID, usrname.c_str());
+    string res = "<<<<<<<<<<<<<<<<<<<<充电桩等候服务车辆信息>>>>>>>>>>>>>>>>>>>>\n";
+    for (int i = 0; i < CHARGEPORT_NUM; i++) {
         //需要改充电桩，暂时没写
-        res+="----------------------------------------------------------------------\n";
+        res += "----------------------------------------------------------------------\n";
     }
+    return 0;
 }
 
 //cmd202: 查看报表
-int Server::getReport(string usrname){
-    send_info.cmd=DATA_STATISTICS;
-    strcpy(send_info.UID,usrname.c_str());
-    string res="<<<<<<<<<<<<<<<<<<<<充电报表>>>>>>>>>>>>>>>>>>>>\n";
-    res+="当前时间："+getCurTime()+"\n";
-    for(int i=0;i<CHARGEPORT_NUM;i++){
-        CPStatusTable report=cData[i]->GetStatus();
-        res+="充电桩编号："+ to_string(i) +"\n";
-        res+="是否为快充："+to_string(report.IsFastCharge)+"\n";
-        res+="累计充电次数："+to_string(report.ChargeCnt)+"\n";
-        res+="累计充电时长："+to_string(report.ChargeTime)+"min\n";
-        res+="累计充电量：" +to_string(report.TotalElect) + "度\n";
-        res+="累计充电费用："+to_string(report.ElectCost)+"元\n";
-        res+="累计服务费用："+to_string(report.ServiceCost)+"元\n";
-        res+="累计总费用："+to_string(report.ChargeCost)+"元\n";
-        res+="--------------------------------------------------------------------\n\n";
+int Server::getReport(string usrname) {
+    send_info.cmd = DATA_STATISTICS;
+    strcpy_s(send_info.UID, usrname.c_str());
+    string res = "<<<<<<<<<<<<<<<<<<<<充电报表>>>>>>>>>>>>>>>>>>>>\n";
+    res += "当前时间：" + getCurTime() + "\n";
+    for (int i = 0; i < CHARGEPORT_NUM; i++) {
+        CPStatusTable report = cData[i]->GetStatus();
+        res += "充电桩编号：" + to_string(i) + "\n";
+        res += "是否为快充：" + to_string(report.IsFastCharge) + "\n";
+        res += "累计充电次数：" + to_string(report.ChargeCnt) + "\n";
+        res += "累计充电时长：" + to_string(report.ChargeTime) + "min\n";
+        res += "累计充电量：" + to_string(report.TotalElect) + "度\n";
+        res += "累计充电费用：" + to_string(report.ElectCost) + "元\n";
+        res += "累计服务费用：" + to_string(report.ServiceCost) + "元\n";
+        res += "累计总费用：" + to_string(report.ChargeCost) + "元\n";
+        res += "--------------------------------------------------------------------\n\n";
     }
-    strcpy(send_info.output,res.c_str());
-    cout<<res<<endl;
-    send_info.REPLY=0;
+    strcpy_s(send_info.output, res.c_str());
+    cout << res << endl;
+    send_info.REPLY = 0;
     server_sock.Send(send_info);
     return 0;
 }
 
 //cmd203：开启充电桩
-int Server::openCP(string usrname,int SID){
-    usrEntry *uE;
-    usrFind(usrname,uE);
-    send_info.cmd=OPEN_CHARGEPORT;
-    strcpy(send_info.UID,usrname.c_str());
+int Server::openCP(string usrname, int SID) {
+    usrEntry* uE=nullptr;
+    usrFind(usrname, uE);
+    send_info.cmd = OPEN_CHARGEPORT;
+    strcpy_s(send_info.UID, usrname.c_str());
     string res;
-    if(cData[SID]->OnState){
-        res="启动失败，充电桩已经开启!\n";
-        strcpy(send_info.output,res.c_str());
-        send_info.REPLY=-1;
+    if (cData[SID]->OnState) {
+        res = "启动失败，充电桩已经开启!\n";
+        strcpy_s(send_info.output, res.c_str());
+        send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout<<res;
+        cout << res;
         return -1;
     }
-    if(uE->role=="admin"&&0<SID<CHARGEPORT_NUM){
-        cData[SID]->on();    
-        res="充电桩"+to_string(SID)+"启动成功!\n";
-        strcpy(send_info.output,res.c_str());
-        send_info.REPLY=0;
+    if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
+        cData[SID]->on();
+        res = "充电桩" + to_string(SID) + "启动成功!\n";
+        strcpy_s(send_info.output, res.c_str());
+        send_info.REPLY = 0;
         server_sock.Send(send_info);
-        cout<<res;
+        cout << res;
         return 0;
-    }   
-    res="充电桩"+to_string(SID)+"开启失败\n";
-    strcpy(send_info.output,res.c_str());
-    send_info.REPLY=-2;
+    }
+    res = "充电桩" + to_string(SID) + "开启失败\n";
+    strcpy_s(send_info.output, res.c_str());
+    send_info.REPLY = -2;
     server_sock.Send(send_info);
-    cout<<res;
+    cout << res;
     return -2;
 }
 
 //cmd204: 关闭充电桩
-int Server::closeCP(string usrname,int SID){
-    usrEntry *uE;
-    usrFind(usrname,uE);
-    send_info.cmd=OPEN_CHARGEPORT;
-    strcpy(send_info.UID,usrname.c_str());
+int Server::closeCP(string usrname, int SID) {
+    usrEntry* uE=nullptr;
+    usrFind(usrname, uE);
+    send_info.cmd = OPEN_CHARGEPORT;
+    strcpy_s(send_info.UID, usrname.c_str());
     string res;
-    if(cData[SID]->OnState==false){
-        res="关闭失败，充电桩已经处于关闭状态!\n";
-        strcpy(send_info.output,res.c_str());
-        send_info.REPLY=-1;
-        cout<<res;
+    if (cData[SID]->OnState == false) {
+        res = "关闭失败，充电桩已经处于关闭状态!\n";
+        strcpy_s(send_info.output, res.c_str());
+        send_info.REPLY = -1;
+        cout << res;
         server_sock.Send(send_info);
         return -1;
     }
-    if(uE->role=="admin"&&0<SID<CHARGEPORT_NUM){
-        cData[SID]->off();    
-        res="充电桩"+to_string(SID)+"关闭成功!\n";
-        strcpy(send_info.output,res.c_str());
-        send_info.REPLY=-1;
+    if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
+        cData[SID]->off();
+        res = "充电桩" + to_string(SID) + "关闭成功!\n";
+        strcpy_s(send_info.output, res.c_str());
+        send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout<<res;
+        cout << res;
         return 0;
-    }   
-    res="充电桩"+to_string(SID)+"关闭失败\n";
-    strcpy(send_info.output,res.c_str());
-    send_info.REPLY=-2;
+    }
+    res = "充电桩" + to_string(SID) + "关闭失败\n";
+    strcpy_s(send_info.output, res.c_str());
+    send_info.REPLY = -2;
     server_sock.Send(send_info);
-    cout<<res;
+    cout << res;
     return -2;
 }
 
-string Server::getCurTime(){
-    struct tm *local_time=NULL;
-	time_t t=time(NULL);
-	local_time=localtime(&t);
-	char str_time[100];
-	strftime(str_time, sizeof(str_time), "%Y-%m-%d:%H:%M:%S", local_time);
+string Server::getCurTime() {
+    struct tm* local_time = NULL;
+    time_t t = time(NULL);
+    local_time = localtime(&t);
+    char str_time[100];
+    strftime(str_time, sizeof(str_time), "%Y-%m-%d:%H:%M:%S", local_time);
     return string(str_time);
 }
 
@@ -804,7 +814,7 @@ DBupdate::DBupdate()
                 getline(uf, line);
             }
             //用户条目解析
-            usrEntry *uE = new usrEntry();
+            usrEntry* uE = new usrEntry();
             if (entryResolve(uE, line) == 0)
             {
                 DBupdate::usrData[uE->usrname] = uE;
@@ -832,7 +842,7 @@ DBupdate::DBupdate()
                 getline(log, line);
             }
             //日志条目解析
-            logEntry *lE = new logEntry();
+            logEntry* lE = new logEntry();
             if (entryResolve(lE, line) == 0)
             {
                 DBupdate::logData[lE->usrname].push_back(lE);
@@ -854,7 +864,7 @@ int DBupdate::entryResolve(usrEntry* uE, string line)
     if (temp.size() < 4)
     {
         cout << "usrEntry "
-             << "\"" << line << " is incomplete" << endl;
+            << "\"" << line << " is incomplete" << endl;
         return -1;
     }
     uE->usrname = temp[0];
@@ -872,7 +882,7 @@ int DBupdate::entryResolve(logEntry* lE, string line)
     if (temp.size() < 7)
     {
         cout << "logEntry "
-             << "\"" << line << " is incomplete" << endl;
+            << "\"" << line << " is incomplete" << endl;
         return -1;
     }
     lE->start_time = temp[0];
@@ -885,7 +895,7 @@ int DBupdate::entryResolve(logEntry* lE, string line)
 }
 
 //新增用户信息
-int DBupdate::addUser(usrEntry *data)
+int DBupdate::addUser(usrEntry* data)
 {
     if (data != nullptr)
     {
@@ -896,7 +906,7 @@ int DBupdate::addUser(usrEntry *data)
 }
 
 //新增日志条目
-int DBupdate::addLogEntry(logEntry *data)
+int DBupdate::addLogEntry(logEntry* data)
 {
     if (data != nullptr)
     {
@@ -913,7 +923,7 @@ int DBupdate::update()
     //更新用户文件
     ofstream uf;
     uf.open(USER_FILENAME, ios::trunc | ios::out);
-    map<string, usrEntry *>::reverse_iterator iter;
+    map<string, usrEntry*>::reverse_iterator iter;
     for (iter = this->usrData.rbegin(); iter != this->usrData.rend(); iter++)
     {
         string line = DBupdate::getEntry(iter->second);
@@ -924,7 +934,7 @@ int DBupdate::update()
     //更新服务日志
     ofstream log;
     log.open(LOG_FILENAME, ios::trunc | ios::out);
-    map<string, vector<logEntry *>>::reverse_iterator it;
+    map<string, vector<logEntry*>>::reverse_iterator it;
     for (it = this->logData.rbegin(); it != this->logData.rend(); it++)
     {
         for (int j = 0; j < it->second.size(); j++)
@@ -934,10 +944,11 @@ int DBupdate::update()
         }
     }
     uf.close();
+    return 0;
 }
 
 //构造条目(用户条目)
-string DBupdate::getEntry(usrEntry *data)
+string DBupdate::getEntry(usrEntry* data)
 {
     string res = data->usrname;
     res += " ";
@@ -950,7 +961,7 @@ string DBupdate::getEntry(usrEntry *data)
 }
 
 //构造条目（日志条目）
-string DBupdate::getEntry(logEntry *data)
+string DBupdate::getEntry(logEntry* data)
 {
     string res = data->start_time;
     res += " ";
@@ -970,7 +981,7 @@ string DBupdate::getEntry(logEntry *data)
 }
 
 //以字符ch为分隔符字符串拆分
-int split(vector<string> &target, string line, char ch)
+int split(vector<string>& target, string line, char ch)
 {
     string temp;
     for (int i = 0; i < line.size(); i++)
