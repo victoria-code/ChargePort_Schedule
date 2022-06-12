@@ -1,4 +1,4 @@
-﻿#include "TSocket.h"	//socket
+#include "TSocket.h"	//socket
 #include "User.h"
 #include "main.h"
 
@@ -19,13 +19,16 @@ void Customer:: keepRecv()
 		case DETAIL: //充电完成提醒+充电详单+扣费成功提醒
 			printf("%s", recv_info.output);
 			//是否要保存充电详单
-
+			//更新本地余额信息
+			this->balance = recv_info.BALANCE;
 			break;
 		case CALL: //叫号，客户进入充电区
 			printf("%s", recv_info.output);
 			break;
-		case BREAKDOWN: ////充电桩故障提醒+当前充电详单+扣费成功提醒
+		case BREAKDOWN: //充电桩故障提醒+当前充电详单+扣费成功提醒
 			printf("%s", recv_info.output);
+			//更新本地余额信息
+			this->balance = recv_info.BALANCE;
 			break;
 		default:
 			break;
@@ -45,32 +48,11 @@ void User::clearData()
 }
 
 /*
-获取消费者余额
-socket
-*/
-double Customer::getUsrBalance()
-{
-	cout << "getUsrBalance\n";
-	return 0.0; // test
-}
-/*
-获取消费者车辆信息
-socket
-*/
-Car *Customer::getCarInfo()
-{
-	cout << "getCarInfo\n";
-	return nullptr; // test
-}
-
-/*
 发送注销请求
 socket
 */
 int User::sendDeleteRequest(string usrname)
 {
-	//return 1; // test
-
 	send_info.cmd = DELETE_USER;
 	strcpy(send_info.UID, usrname.c_str());
 
@@ -93,14 +75,14 @@ int Customer::deleteAccount()
 
 	//首先检查是否有充电任务正在进行
 	//通过查询排队结果中的前车等待数量来实现
-	int suc = 1;
+	int suc = 0;
 	// int status = getChargeStatus();
 	mutexSock.lock();
 	mutexUsr.lock();
 	sendQueueInfoRequest();
 	if (this->car && this->car->Reply && this->car->Reply->num == 0)
 	{ //如果正在充电
-		suc = 0;
+		suc = -1;
 		string choice[] = {"等待结束", "强行停止"};
 		cout << "您有充电任务正在进行，是否等待充电结束? ";
 		printChoice(choice, 2);
@@ -110,17 +92,19 @@ int Customer::deleteAccount()
 			cout << "请输入有效选项: ";
 			printChoice(choice, 2);
 		}
-		if (id == "1")
+		if (id == "1"){
 			cout << "请等待充电结束后再次尝试注销" << endl;
+			return 0;
+		}
 		else
 		{
 			suc = cancelCharge(); //申请结束充电
 		}
 	}
 
-	if (suc) //向服务器发送注销申请
+	if (suc == 0) //向服务器发送注销申请
 		suc = sendDeleteRequest(this->usrname);
-	if (suc)
+	if (suc == 0)	//Server::usrDataUpdate的返回值只会是0
 	{
 		cout << "注销成功！" << endl;
 		this->clearData();
@@ -239,7 +223,7 @@ int Customer::recharge()
 	mutexSock.lock();
 	int suc = sendUpdateBalanceRequest(this->balance + amount);
 	mutexSock.unlock();
-	if (suc) //充值成功，更新本地数据
+	if (suc == 0) //充值成功，更新本地数据
 	{
 		mutexUsr.lock();
 		this->balance += amount;
@@ -265,38 +249,8 @@ int Customer::sendUpdateBalanceRequest(double add)
 	client_sock.Recv(recv_info);
 	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
-	return 1;
-}
-
-/*
-扣费
-服务器：提供用户余额信息，更新用户余额
-返回：扣费成功/失败(1/0)
-*/
-int Customer::deduct()
-{
-	cout << "==========扣费界面=========" << endl;
-	//接收来自服务器的扣费信息
-	double pay = 0; //待扣取金额
-	// pay = ...    // socket
-	cout << "本次消费金额：" << pay << endl;
-
-	//检查账户余额，若余额不足则提示充值
-	int suc = 1;
-	if (this->balance < pay)
-	{
-		suc = 0;
-		cout << "您的余额不足，请充值" << endl;
-		//充值
-		suc = recharge();
-	}
-	if (suc)
-	{
-		suc = sendUpdateBalanceRequest(this->balance - pay); //告知服务器可以进行扣费操作
-		if (suc)											 //扣费成功，更新本地余额信息
-			this->balance -= pay;
-	}
-	return suc;
+	
+	return recv_info.REPLY;
 }
 
 /*
@@ -389,16 +343,21 @@ int Customer::newChargeRequest()
 	//向服务器提交充电请求
 	int suc = 0;
 	suc = sendChargeRequest(); //直接读取this->car->Ask的内容
-	if (suc)				   //查看排队结果
+	if (suc == 0)
 	{
 		cout << "提交充电请求成功，正在获取排队信息..." << endl;
 		cout << "您当前的排队号码为: " << this->car->Reply->queueNum << ", 前方还有" << this->car->Reply->waitingNum << "辆车在等待" << endl;
 		Customer *tmp = this;
-		std::thread sub{&Customer::keepRecv,&tmp};
+		std::thread sub{&Customer::keepRecv,&(*tmp)};
 		sub.detach();
 	}
-	else
-		cout << "提交充电请求失败，请稍后再试" << endl;
+	else if(suc == -1){
+		cout << "提交充电请求失败，车辆当前位于充电区，无法提交新的充电请求" << endl;
+	}
+	else if(suc == -2){
+		cout << "提交充电请求失败，当前等候区已满，无法处理新的用户请求，请稍后再试" << endl;
+	}
+
 	mutexSock.lock();
 	mutexUsr.lock();
 	return suc;
@@ -410,9 +369,7 @@ int Customer::newChargeRequest()
 socket
 */
 int Customer::sendChargeRequest()
-{
-	return 1; // test
-	
+{	
 	send_info.cmd = CHARGE_REQUEST;//此处未记录电池容量 若server需要再加
 	strcpy_s(send_info.UID, this->usrname.c_str());
 	send_info.MODE = this->car->Ask->IsFastCharge == true ? FAST : SLOW;
@@ -437,7 +394,8 @@ int Customer::sendChargeRequest()
 	_itoa_s(reply->num, QNum + 1, 9, 10);
 	reply->queueNum = QNum;
 	this->car->Reply = reply;
-	// return recv_info.REPLY;
+
+	return recv_info.REPLY;
 }
 
 /*
@@ -465,7 +423,7 @@ int Customer::cancelCharge()
 		mutexSock.lock();
 		suc = sendCancelRequest();
 		mutexSock.unlock();
-		if (suc)
+		if (suc == 0)
 		{
 			cout << "取消成功！" << endl;
 			mutexUsr.lock();
@@ -473,8 +431,8 @@ int Customer::cancelCharge()
 			this->car->Reply = nullptr;
 			mutexUsr.unlock();
 		}
-		else
-			cout << "取消充电失败，请稍后再试" << endl;
+		else if(suc == -1)
+			cout << "取消充电失败，您当前未提交充电请求" << endl;
 	}
 	return suc;
 }
@@ -483,8 +441,6 @@ socket
 */
 int Customer::sendCancelRequest()
 {
-	return 1; // test
-
 	send_info.cmd = CANCEL_REQUEST;
 	strcpy_s(send_info.UID, this->usrname.c_str());
 	//目前只添加账户名信息 若需要用到Ask再后续添加
@@ -496,7 +452,7 @@ int Customer::sendCancelRequest()
 
 	// clearASK
 
-	// return recv_info.REPLY;
+	return recv_info.REPLY;
 }
 
 /*
@@ -538,49 +494,6 @@ int Customer::sendQueueInfoRequest()
 	this->car->Reply->num = recv_info.Q_NUM;
 	return 0; // test
 }
-
-/*
-(充电结束后)查看充电详情
-服务器：返回充电详单
-*/
-// int Customer::getChargeInfo()
-// {
-// 	cout << "==========充电详情界面=========" << endl;
-// 	int suc = 0;
-// 	suc = sendChargeInfoRequest(); //填充this->car->info
-// 	if (suc)
-// 	{
-// 		// CostTable *info = this->car->info;
-// 		CostTable *info = this->info;
-// 		/*
-// 	int ChargeID;           // 详单编号
-//     time_t CreateTableTime; // 详单生成时间
-//     int SID;                // 充电桩编号
-// 	bool IsFastCharge;		// 充电模式
-//     std::string usrname;    // 车辆用户名	//NULL
-//     int CarID;              // 汽车编号		//NULL
-//     time_t StartTime;       // 启动时间
-//     time_t End_Time;        // 停止时间
-//     double TotalElect;      // 总充电电量,单位/度
-//     long long ChargeTime;   // 充电时长，单位/s
-//     double ChargeCost;      // 总费用，单位/元
-//     double ServiceCost;     // 服务费，单位/元
-//     double ElectCost;       // 电费，单位/元
-// 		*/
-// 		cout << "----------充电详单----------" << endl;
-// 		cout << "详单编号: " << info->ChargeID << "\t详单生成时间: " << ctime(&(info->CreateTableTime))
-// 			 << "\n充电桩编号: " << info->SID << "\t充电模式: " << (info->IsFastCharge ? "FAST" : "SLOW")
-// 			 << "\n启动时间: " << ctime(&(info->StartTime)) << "\t停止时间: " << ctime(&(info->End_Time))
-// 			 << "\n充电时长: " << getTime(info->ChargeTime) << "\t充电电量: " << info->TotalElect
-// 			 << "\n充电费用: " << info->ElectCost << "\t服务费用: " << info->ServiceCost
-// 			 << "\n总费用: " << info->ChargeCost << endl;
-// 		cout << "---------------------------" << endl;
-// 	}
-// 	else
-// 		cout << "获取充电详情失败，请稍后再试" << endl;
-// 	return suc;
-// }
-
 
 /*------Utils------*/
 
