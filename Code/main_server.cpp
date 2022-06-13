@@ -8,7 +8,7 @@ int recvCostTable(Server* server) {
     {
 
         //接收到充电详单
-        if (ChargeTableHead->isAvailable)
+        if (ChargeTableHead&&ChargeTableHead->isAvailable)
         {
             for (;;)
             {
@@ -78,13 +78,17 @@ int recvCostTable(Server* server) {
 
 int main() {
     Server server;
-    //新建线程读取充电桩返回的充电详单并进行调度
-    thread withChargePort(recvCostTable, &server);
-    withChargePort.detach();
+    server.load();
+    ////新建线程读取充电桩返回的充电详单并进行调度
+    //thread withChargePort(recvCostTable, &server);
+    //withChargePort.detach();
     for (;;)
     {
         server_sock.Recv(recv_info);
+        cout<<"接收到客户端的请求"<<endl;
+        cout << "cmd: " << recv_info.cmd << endl;
         server.replyClient(recv_info);
+
     }
     return 0;
 }
