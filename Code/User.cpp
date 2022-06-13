@@ -76,29 +76,34 @@ int Customer::deleteAccount()
 	//首先检查是否有充电任务正在进行
 	//通过查询排队结果中的前车等待数量来实现
 	int suc = 0;
-	// int status = getChargeStatus();
 	mutexSock.lock();
 	mutexUsr.lock();
-	sendQueueInfoRequest();
-	if (this->car && this->car->Reply && this->car->Reply->num == 0)
-	{ //如果正在充电
-		suc = -1;
-		string choice[] = { "等待结束", "强行停止" };
-		cout << "您有充电任务正在进行，是否等待充电结束? ";
-		printChoice(choice, 2);
-		string id;
-		while (getline(cin, id), !isLegalChoice(id, 2))
+	//sendQueueInfoRequest();
+	//if (this->car && this->car->Reply && this->car->Reply->num == 0)
+	if(this->car && this->car->Reply)	//用户有车且成功发送充电请求
+	{
+		sendQueueInfoRequest();
+		if (this->car->Reply->num == 0)	//如果正在充电
 		{
-			cout << "请输入有效选项: ";
+			suc = -1;
+			string choice[] = {"等待结束", "强行停止"};
+			cout << "您有充电任务正在进行，是否等待充电结束? ";
 			printChoice(choice, 2);
-		}
-		if (id == "1") {
-			cout << "请等待充电结束后再次尝试注销" << endl;
-			return 0;
-		}
-		else
-		{
-			suc = cancelCharge(); //申请结束充电
+			string id;
+			while (getline(cin, id), !isLegalChoice(id, 2))
+			{
+				cout << "请输入有效选项: ";
+				printChoice(choice, 2);
+			}
+			if (id == "1")
+			{
+				cout << "请等待充电结束后再次尝试注销" << endl;
+				return 0;
+			}
+			else
+			{
+				suc = cancelCharge(); //申请结束充电
+			}
 		}
 	}
 
