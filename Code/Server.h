@@ -7,22 +7,23 @@
 extern TSocket server_sock;
 
 //记录用户信息文件名和日志文件名，该文件和服务器端main.cpp位于同一目录下
-#define USER_FILENAME "user.txt"
-#define LOG_FILENAME   "log.txt"
+#define USER_FILENAME "C:\\Users\\Zheng siyang\\Desktop\\user.txt"
+#define LOG_FILENAME   "C:\\Users\\Zheng siyang\\Desktop\\log.txt"
 
 //充电桩数目为5，编号为0~1代表快充，编号为2~4代表慢充
 #define CHARGEPORT_NUM 5
 
 //用户数据库条目
-struct usrEntry {
+typedef struct UsrEntry {
     string usrname;
     string passwd;//密码sha1值
     string role;//customer 或 admin
     int balance;//余额
-};
+    UsrEntry() {};
+}usrEntry;
 
 //日志条目
-struct logEntry {
+typedef struct LogEntry {
     string start_time;//开始充电时间
     string usrname;
     int SID;//充电桩ID
@@ -30,7 +31,8 @@ struct logEntry {
     int mode;//充电模式
     int time;//实际充电时间
     int cost;//金额
-};
+    LogEntry() {};
+}logEntry;
 
 //数据库更新
 class DBupdate {
@@ -68,6 +70,7 @@ class Server {
 public:
 
     /*服务器初始化*/
+    void load();
     Server();
     Server(int PID);/**故障情况
     /*服务器下线*/
