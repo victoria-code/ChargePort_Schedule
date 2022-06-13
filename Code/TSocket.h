@@ -1,7 +1,7 @@
 #ifndef TSOCKET_H
 #define TSOCKET_H
 
-#include <WinSock2.h>
+#include <WinSock.h>
 #include <string>
 #include <iostream>
 using namespace std;
