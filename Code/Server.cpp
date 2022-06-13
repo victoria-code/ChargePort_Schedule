@@ -69,6 +69,10 @@ int Server::logFind(string usrname, vector<logEntry*>& res)
 //用户信息更新<新增用户，用户信息改变，用户注销>
 int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
 {
+    if (!uE) {
+        cout << "[fatal error]:uE为空" << endl;
+        return -1;
+    }
     auto it = database.usrData.find(uE->usrname);
 
     //注销
@@ -226,6 +230,7 @@ int Server::replyClient(Info usrInfo)
     case CLOSE_CHARGEPORT:
         closeCP(Usrname, usrInfo.REPLY);
         break;
+    default:break;
     }
    
     return 0;
@@ -935,26 +940,27 @@ int DBupdate::update()
     ofstream uf;
     uf.open(USER_FILENAME, ios::trunc | ios::out);
   //  map<string, usrEntry*>::reverse_iterator iter;
-    for (auto iter = usrData.rbegin(); iter != usrData.rend(); iter++)
+    for (auto iter = usrData.begin(); iter != usrData.end(); iter++)
     {
         string line = getEntry(iter->second);
-        uf << line << "\n";
+        if(line.size())
+            uf << line << "\n";
     }
     uf.close();
 
-    //更新服务日志
-    ofstream log;
-    log.open(LOG_FILENAME, ios::trunc | ios::out);
-    map<string, vector<logEntry*>>::reverse_iterator it;
-    for (it = this->logData.rbegin(); it != this->logData.rend(); it++)
-    {
-        for (int j = 0; j < it->second.size(); j++)
-        {
-            string line = getEntry(it->second[j]);
-            log << line << "\n";
-        }
-    }
-    uf.close();
+    ////更新服务日志
+    //ofstream log;
+    //log.open(LOG_FILENAME, ios::trunc | ios::out);
+    //map<string, vector<logEntry*>>::reverse_iterator it;
+    //for (it = this->logData.rbegin(); it != this->logData.rend(); it++)
+    //{
+    //    for (int j = 0; j < it->second.size(); j++)
+    //    {
+    //        string line = getEntry(it->second[j]);
+    //        log << line << "\n";
+    //    }
+    //}
+    //uf.close();
     cout << "done\n";
     return 0;
 }
@@ -962,6 +968,8 @@ int DBupdate::update()
 //构造条目(用户条目)
 string DBupdate::getEntry(usrEntry* data)
 {
+    if (!data)
+        return "";
     string res = data->usrname;
     res += " ";
     res += data->passwd;
@@ -975,6 +983,8 @@ string DBupdate::getEntry(usrEntry* data)
 //构造条目（日志条目）
 string DBupdate::getEntry(logEntry* data)
 {
+    if (!data)
+        return "";
     string res = data->start_time;
     res += " ";
     res += data->usrname;
@@ -1008,5 +1018,7 @@ int split(vector<string>& target, string line, char ch)
             temp += line[i];
         }
     }
+    if(temp.size())
+        target.push_back(temp);
     return 0;
 }
