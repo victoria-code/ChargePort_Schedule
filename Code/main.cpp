@@ -36,6 +36,7 @@ int main()
 			break;
 		case 2:
 			client->signUp();
+			break;
 		case 3:
 			client->logIN();
 			break;
