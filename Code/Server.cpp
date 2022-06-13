@@ -3,8 +3,12 @@
 extern struct Info send_info, recv_info;
 /*Server类实现*/
 
+Server::Server() {
+
+}
+
 //服务器初始化
-Server::Server()
+void Server::load()
 {
     //数据库自动同步到本地<数据库构造函数已经完成>
 
@@ -13,13 +17,13 @@ Server::Server()
     {
         //快充
         if (i < FAST_NUM)
-            cData[i] = new ChargePort(i, true, true);
+            cData.push_back(new ChargePort(i, true, true));
         else
-            cData[i] = new ChargePort(i, false, true);
+            cData.push_back(new ChargePort(i, false, true));
     }
     //初始化排队信息
     FNum = TNum = 0;
-
+    cout << "服务器初始化完成！" << endl;
 }
 
 //
@@ -38,14 +42,14 @@ Server::~Server()
 //用户信息查询
 int Server::usrFind(string usrname, usrEntry* res)
 {
-    auto it = database.usrData.find(usrname);
+    res= database.usrData[usrname];
     //用户不存在
-    if (it == database.usrData.end())
+    if (!res )
     {
         res = nullptr;
         return -1;
     }
-    res = it->second;
+
     return 0;
 }
 
@@ -151,7 +155,7 @@ int Server::replyClient(Info usrInfo)
 {
     string Usrname = string(usrInfo.UID);
     usrEntry* uE = database.usrData[Usrname];
-    string qNum;
+    string qNum,role;
     switch (usrInfo.cmd)
     {
         // cmd:100 登录验证
@@ -161,17 +165,21 @@ int Server::replyClient(Info usrInfo)
 
         // cmd:101 注册验证
     case SIGN_UP:
-        signUp(Usrname, string(usrInfo.PWD), uE->role);
+       role = (usrInfo.MODE == 1) ? "customer" : "admin";
+        signUp(Usrname, string(usrInfo.PWD), role);
+        database.update();
         break;
 
         // cmd:102 充值、扣费
     case Balance_CHANGE:
         balanceChange(Usrname, usrInfo.BALANCE);
+        database.update();
         break;
 
         // cmd:103 注销
     case DELETE_USER:
         deleteUsr(Usrname);
+        database.update();
         break;
 
         // cmd: 104 充电请求
@@ -219,6 +227,7 @@ int Server::replyClient(Info usrInfo)
         closeCP(Usrname, usrInfo.REPLY);
         break;
     }
+   
     return 0;
 }
 
@@ -227,36 +236,36 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
 {
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = LOG_IN;
+    cout << "登录验证..." << endl;
     string res;
     //检验用户是否存在
-    if (Server::usrFind(usrname, uE) != 0)
+    if (usrFind(usrname, uE) != 0)
     {
         res = "用户名<" + usrname + ">不存在！" + "\n";
+        cout << res << endl;
         strcpy_s(send_info.output, res.c_str());
-
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
         return -1;
     }
     //判断密码是否正确
     else if (passwd != uE->passwd)
     {
         res = "用户名和密码不匹配！\n";
+        cout << res;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
-        server_sock.Send(send_info);
-        cout << res;
+        server_sock.Send(send_info); 
         return -2;
     }
     //登录成功
     else
     {
         res = "登录成功！\n";
+        cout << res;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
-        cout << res;
         return 0;
     }
 }
@@ -264,13 +273,14 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
 // cmd:101 注册认证
 int Server::signUp(string usrname, string passwd, string role)
 {
+    cout << "[注册验证] : ";
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = SIGN_UP;
     string res;
     //用户名长度非法
-    if (usrname.size() > 20 || usrname.size() < 2)
+    if (usrname.size() > 20 || usrname.size() < 2||usrname.find(" ")!=string::npos)
     {
-        res = "用户名长度必须在5~20之间!\n";
+        res = "用户名长度必须在5~20之间,且不能包含空格!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -278,7 +288,7 @@ int Server::signUp(string usrname, string passwd, string role)
         return -1;
     }
     //用户名已存在
-    else if (database.usrData.find(usrname) != database.usrData.end())
+    else if (database.usrData[usrname])
     {
         res = "用户名已存在！\n";
         strcpy_s(send_info.output, res.c_str());
@@ -288,8 +298,8 @@ int Server::signUp(string usrname, string passwd, string role)
         return -2;
     }
 
-    res = "注册成功!\n";
-    usrEntry* uE = new struct usrEntry();
+    usrEntry* uE = new usrEntry();
+    cout << usrname << " " << "注册成功!" << endl;
     uE->usrname = usrname;
     uE->passwd = passwd;
     uE->role = role;
@@ -297,6 +307,7 @@ int Server::signUp(string usrname, string passwd, string role)
     usrDataUpdate(false, uE);
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
+  
     server_sock.Send(send_info);
     return 0;
 }
@@ -800,6 +811,7 @@ DBupdate::DBupdate()
 {
 
     //加载用户文件，若不存在则直接创建
+    cout << "加载数据库..." << endl;
     ifstream uf;
     uf.open(USER_FILENAME, ifstream::out | ifstream::app);
     if (uf.is_open())
@@ -854,6 +866,7 @@ DBupdate::DBupdate()
         cout << "[FATAL ERROR]: log file " << LOG_FILENAME << " open failure" << endl;
     }
     log.close();
+    cout << "数据库同步完毕!" << endl;
 }
 
 //数据库条目解析(用户条目)
@@ -863,8 +876,6 @@ int DBupdate::entryResolve(usrEntry* uE, string line)
     split(temp, line, ' ');
     if (temp.size() < 4)
     {
-        cout << "usrEntry "
-            << "\"" << line << " is incomplete" << endl;
         return -1;
     }
     uE->usrname = temp[0];
@@ -881,8 +892,6 @@ int DBupdate::entryResolve(logEntry* lE, string line)
     split(temp, line, ' ');
     if (temp.size() < 7)
     {
-        cout << "logEntry "
-            << "\"" << line << " is incomplete" << endl;
         return -1;
     }
     lE->start_time = temp[0];
@@ -922,12 +931,13 @@ int DBupdate::update()
 {
 
     //更新用户文件
+    cout << "更新数据库..."  ;
     ofstream uf;
     uf.open(USER_FILENAME, ios::trunc | ios::out);
-    map<string, usrEntry*>::reverse_iterator iter;
-    for (iter = this->usrData.rbegin(); iter != this->usrData.rend(); iter++)
+  //  map<string, usrEntry*>::reverse_iterator iter;
+    for (auto iter = usrData.rbegin(); iter != usrData.rend(); iter++)
     {
-        string line = DBupdate::getEntry(iter->second);
+        string line = getEntry(iter->second);
         uf << line << "\n";
     }
     uf.close();
@@ -940,11 +950,12 @@ int DBupdate::update()
     {
         for (int j = 0; j < it->second.size(); j++)
         {
-            string line = DBupdate::getEntry(it->second[j]);
+            string line = getEntry(it->second[j]);
             log << line << "\n";
         }
     }
     uf.close();
+    cout << "done\n";
     return 0;
 }
 
