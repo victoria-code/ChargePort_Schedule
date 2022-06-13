@@ -347,7 +347,8 @@ int Server::balanceChange(string usrname, int amount)
 // cmd:103 用户注销
 int Server::deleteUsr(string usrname)
 {
-    usrEntry* uE=NULL;
+    //usrEntry* uE=NULL;
+    usrEntry *uE = new usrEntry;
     uE->usrname = usrname;
     send_info.cmd = DELETE_USER;
     strcpy_s(send_info.UID, usrname.c_str());
