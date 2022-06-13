@@ -268,6 +268,9 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
     {
         res = "登录成功！\n";
         cout << res;
+        send_info.MODE = 1;
+        if (uE->role == "admin")
+            send_info.MODE = 2;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
