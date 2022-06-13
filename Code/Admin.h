@@ -1,15 +1,16 @@
-/*
- * @Author: yummy
- * @Date: 2022-06-08 17:35:24
- * @LastEditors: yummy
- * @LastEditTime: 2022-06-12 17:07:28
- * @Description: è¯·å¡«å†™ç®€ä»‹
- */
+#ifndef __ADMIN_H__
+#define __ADMIN_H__
+#pragma once
+
+#include<iostream>
+#include<string>
+
 #include "User.h"
 #include "client.h"
 #include "main.h"
 #include "TSocket.h"
-#include "ChargePort.h"
+
+using namespace std;
 
 class Admin : public User
 {
@@ -20,27 +21,36 @@ public:
         this->type = ADMIN;
     }
 
+    Admin(string name, int t)
+    {
+        this->usrname = name;
+        this->type = t;
+    }
+
     
-    // ç™»å½•åçš„æ“ä½œç•Œé¢
+    // µÇÂ¼ºóµÄ²Ù×÷½çÃæ
     void showMenu();
     
     /*with chargePort*/
-    //æŸ¥è¯¢å……ç”µæ¡©ä¿¡æ¯(å……ç”µæ¡©çŠ¶æ€ã€æ’é˜Ÿè½¦è¾†ä¿¡æ¯ã€æŠ¥è¡¨)
+    //²éÑ¯³äµç×®ĞÅÏ¢(³äµç×®×´Ì¬¡¢ÅÅ¶Ó³µÁ¾ĞÅÏ¢¡¢±¨±í)
     bool getChargePortInfo();
 
-    //å¼€å¯å……ç”µæ¡©
+    //¿ªÆô³äµç×®
     bool openChargePort();
 
-    //å…³é—­å……ç”µæ¡©
+    //¹Ø±Õ³äµç×®
     bool closeChargePort();
 
-    //å‘æœåŠ¡å™¨å‘é€è¯·æ±‚
+    //Ïò·şÎñÆ÷·¢ËÍÇëÇó
     int sendRequest(string usrname, int cmd, int number); 
     int sendReportRequest(string usrname, int cmd);
     
-    //ç”¨æˆ·æ³¨é”€
+    //ÓÃ»§×¢Ïú
     int deleteAccount();
 
-    //å¤„ç†è¿”å›ä¿¡æ¯
-    int printRecv(int cmd);
+    //´¦Àí·µ»ØĞÅÏ¢
+    void printRecv(int cmd);
 };
+
+
+#endif

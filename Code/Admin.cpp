@@ -1,17 +1,18 @@
 #include "Admin.h"
 
-//ç™»å½•ç•Œé¢
+extern TSocket client_sock;
+//µÇÂ¼½çÃæ
 void Admin::showMenu(){
     while (true)
 	{
 		cout << "**************************************************" << endl;
-		cout << "******************  1.å¼€å¯å……ç”µæ¡© *******************" << endl;
-		cout << "******************  2.å…³é—­å……ç”µæ¡© *******************" << endl;
-		cout << "******************  3.æŸ¥è¯¢ä¿¡æ¯ *******************" << endl;
-		cout << "******************  4.é€€å‡ºç™»å½• *******************" << endl;
-		cout << "******************  5.æ³¨é”€è´¦å· *******************" << endl;
+		cout << "******************  1.¿ªÆô³äµç×® *******************" << endl;
+		cout << "******************  2.¹Ø±Õ³äµç×® *******************" << endl;
+		cout << "******************  3.²éÑ¯ĞÅÏ¢ *******************" << endl;
+		cout << "******************  4.ÍË³öµÇÂ¼ *******************" << endl;
+		cout << "******************  5.×¢ÏúÕËºÅ *******************" << endl;
 		cout << "**************************************************" << endl;
-		cout << "\nè¯·è¾“å…¥æ‚¨çš„é€‰æ‹©ï¼š " << endl;
+		cout << "\nÇëÊäÈëÄúµÄÑ¡Ôñ£º " << endl;
 		int choice;
 		cin >> choice;
 		switch (choice)
@@ -46,63 +47,68 @@ void Admin::showMenu(){
 		}
 	}
 }
-//ç®¡ç†å‘˜æ³¨é”€
-//todo æˆ‘ä»¥ä¸ºæ³¨é”€æ˜¯ç™»å‡º çœ‹èµ·æ¥useré‚£è¾¹å†™çš„ä¸æ˜¯ç™»å‡ºæ˜¯åˆ é™¤è´¦æˆ·
+//¹ÜÀíÔ±×¢Ïú
+//todo ÎÒÒÔÎª×¢ÏúÊÇµÇ³ö ¿´ÆğÀ´userÄÇ±ßĞ´µÄ²»ÊÇµÇ³öÊÇÉ¾³ıÕË»§
 int Admin::deleteAccount(){ 
     int suc = 0;
-    cout << "==========æ³¨é”€ç•Œé¢=========" << endl;
-    cout << "æ‚¨ç¡®å®šè¦æ³¨é”€å—ï¼Ÿ" << endl;
-    string choice[] = {"ç¡®å®š","å–æ¶ˆ"};
+    cout << "==========×¢Ïú½çÃæ=========" << endl;
+    cout << "ÄúÈ·¶¨Òª×¢ÏúÂğ£¿" << endl;
+    string choice[] = {"È·¶¨","È¡Ïû"};
     printChoice(choice,2);
     string id;
     while (getline(cin, id), !isLegalChoice(id, 2))
     {
-        cout << "è¯·è¾“å…¥æœ‰æ•ˆé€‰é¡¹: ";
+        cout << "ÇëÊäÈëÓĞĞ§Ñ¡Ïî: ";
         printChoice(choice, 2);
     }
     if(id == "1")
         suc = sendDeleteRequest(this->usrname);
-    if(suc)
-        cout << "æ³¨é”€æˆåŠŸï¼" << endl;
-    else cout << "æ³¨é”€å¤±è´¥ï¼Œè¯·ç¨åå†è¯•" << endl;
+    if(suc){
+        cout << "×¢Ïú³É¹¦£¡" << endl;
+        return 1;
+    }
+    else {
+        cout << "×¢ÏúÊ§°Ü£¬ÇëÉÔºóÔÙÊÔ" << endl;
+        return 0;
+    }
 }
 
-//æ‰“å¼€å……ç”µæ¡©ï¼ˆå¯é€‰æ‹©ï¼‰
-//è¿”å›å€¼ï¼štrueæ‰“å¼€æˆåŠŸ falseæ‰“å¼€å¤±è´¥
+//´ò¿ª³äµç×®£¨¿ÉÑ¡Ôñ£©
+//·µ»ØÖµ£ºtrue´ò¿ª³É¹¦ false´ò¿ªÊ§°Ü
 bool Admin::openChargePort(){
     int suc = 0;
-    cout << "==========æ‰“å¼€å……ç”µæ¡©=========" << endl;
-    cout << "è¯·é€‰æ‹©è¦æ‰“å¼€çš„å……ç”µæ¡©ç¼–å·ï¼Œå…¨éƒ¨æ‰“å¼€è¯·å›å¤0" << endl;
+    cout << "==========´ò¿ª³äµç×®=========" << endl;
+    cout << "ÇëÑ¡ÔñÒª´ò¿ªµÄ³äµç×®±àºÅ£¬È«²¿´ò¿ªÇë»Ø¸´0" << endl;
     string id_str;
     while (getline(cin, id_str), !isLegalChoice(id_str, 5))
     {
-        cout << "è¯·è¾“å…¥æœ‰æ•ˆé€‰é¡¹: ";
+        cout << "ÇëÊäÈëÓĞĞ§Ñ¡Ïî: ";
     }
     int id = id_str[0] - '0' - 1;
     suc = sendRequest(usrname, OPEN_CHARGEPORT, id);
-    if (suc){
+    if (suc == 0){
         cout << recv_info.output << endl;
         return true;
     }
     else cout << recv_info.output << endl;
     return false;
-    //todo å……ç”µæ¡©å·²å¼€å¯
+    //todo ³äµç×®ÒÑ¿ªÆô
 }
 
-//å…³é—­å……ç”µæ¡©ï¼ˆå¯é€‰æ‹©ï¼‰
-//è¿”å›å€¼ï¼štrueå…³é—­æˆåŠŸ falseå…³é—­å¤±è´¥
+//¹Ø±Õ³äµç×®£¨¿ÉÑ¡Ôñ£©
+//·µ»ØÖµ£ºtrue¹Ø±Õ³É¹¦ false¹Ø±ÕÊ§°Ü
 bool Admin::closeChargePort(){
     int suc = 0;
-    cout << "==========å…³é—­å……ç”µæ¡©=========" << endl;
-    cout << "è¯·é€‰æ‹©è¦æ‰“å¼€çš„å……ç”µæ¡©ç¼–å·ï¼Œå…¨éƒ¨æ‰“å¼€è¯·å›å¤0" << endl;
+    cout << "==========¹Ø±Õ³äµç×®=========" << endl;
+    cout << "ÇëÑ¡ÔñÒª´ò¿ªµÄ³äµç×®±àºÅ£¬È«²¿´ò¿ªÇë»Ø¸´0" << endl;
     string id_str;
     while (getline(cin, id_str), !isLegalChoice(id_str, 5))
     {
-        cout << "è¯·è¾“å…¥æœ‰æ•ˆé€‰é¡¹: ";
+        cout << "ÇëÊäÈëÓĞĞ§Ñ¡Ïî: ";
     }
     int id = id_str[0] - '0' - 1;
     suc = sendRequest(usrname, CLOSE_CHARGEPORT, id);
-    if (suc){
+    if (suc == 0){
         cout << recv_info.output << endl;
         return true;
     }
@@ -110,17 +116,17 @@ bool Admin::closeChargePort(){
     return false;
 }
 
-//æŸ¥è¯¢å……ç”µæ¡©ä¿¡æ¯(å……ç”µæ¡©çŠ¶æ€)
-//è¿”å›å€¼ï¼štrueæˆåŠŸ falseå¤±è´¥
+//²éÑ¯³äµç×®ĞÅÏ¢(³äµç×®×´Ì¬)
+//·µ»ØÖµ£ºtrue³É¹¦ falseÊ§°Ü
 bool Admin::getChargePortInfo(){
     int suc = 0;
-    cout << "==========æŸ¥è¯¢å……ç”µä¿¡æ¯=========" << endl;
-    string choice[] = {"æŸ¥è¯¢å……ç”µæ¡©çŠ¶æ€","æŸ¥è¯¢æ’é˜Ÿè½¦è¾†ä¿¡æ¯","æŸ¥è¯¢æŠ¥è¡¨"};
+    cout << "==========²éÑ¯³äµçĞÅÏ¢=========" << endl;
+    string choice[] = {"²éÑ¯³äµç×®×´Ì¬","²éÑ¯ÅÅ¶Ó³µÁ¾ĞÅÏ¢","²éÑ¯±¨±í"};
     printChoice(choice,3);
     string id_str;
     while (getline(cin, id_str), !isLegalChoice(id_str, 5))
     {
-        cout << "è¯·è¾“å…¥æœ‰æ•ˆé€‰é¡¹: ";
+        cout << "ÇëÊäÈëÓĞĞ§Ñ¡Ïî: ";
         printChoice(choice, 3);
     }
     int id = id_str[0] - '0';
@@ -132,7 +138,7 @@ bool Admin::getChargePortInfo(){
                 printRecv(SPY_CHARGEPORT);
                 return true;
             }
-            else cout << "ä¿¡æ¯æŸ¥è¯¢å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•" << endl;
+            else cout << "ĞÅÏ¢²éÑ¯Ê§°Ü£¬ÇëÉÔºóÖØÊÔ" << endl;
             return false;
             break;
         case 2:
@@ -141,56 +147,57 @@ bool Admin::getChargePortInfo(){
                 printRecv(WAIT_CAR_DATA);
                 return true;
             }
-            else cout << "ä¿¡æ¯æŸ¥è¯¢å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•" << endl;
+            else cout << "ĞÅÏ¢²éÑ¯Ê§°Ü£¬ÇëÉÔºóÖØÊÔ" << endl;
             return false;
             break;
-        case 3:
+        default:
             suc = sendReportRequest(usrname, DATA_STATISTICS);
             if (suc){
                 printRecv(DATA_STATISTICS);
                 return true;
             }
-            else cout << "ä¿¡æ¯æŸ¥è¯¢å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•" << endl;
+            else cout << "ĞÅÏ¢²éÑ¯Ê§°Ü£¬ÇëÉÔºóÖØÊÔ" << endl;
             return false;
             break;
     }
 }
 
-//å‘é€æœåŠ¡å™¨è¯·æ±‚
-//1è¡¨ç¤ºè¯·æ±‚æˆåŠŸ 0è¡¨ç¤ºè¯·æ±‚å¤±è´¥ 2è¡¨ç¤ºå……ç”µæ¡©å·²å¼€å¯ 3è¡¨ç¤ºå……ç”µæ¡©å·²å…³é—­ è¿”å›å†…å®¹å­˜åœ¨äºrecv_infoé‡Œ
+//·¢ËÍ·şÎñÆ÷ÇëÇó
+//1±íÊ¾ÇëÇó³É¹¦ 0±íÊ¾ÇëÇóÊ§°Ü 2±íÊ¾³äµç×®ÒÑ¿ªÆô 3±íÊ¾³äµç×®ÒÑ¹Ø±Õ ·µ»ØÄÚÈİ´æÔÚÓÚrecv_infoÀï
 int Admin::sendRequest(string usrname,int cmd,int number){
     send_info.cmd = cmd;
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     send_info.REPLY = number;
     client_sock.Send(send_info);
     client_sock.Recv(recv_info);
     return recv_info.REPLY;
 }
 
-//å‘é€æŸ¥è¯¢è¯·æ±‚
+//·¢ËÍ²éÑ¯ÇëÇó
 int Admin::sendReportRequest(string usrname,int cmd){
     send_info.cmd = cmd;
-    strcpy(send_info.UID, usrname.c_str());
+    strcpy_s(send_info.UID, usrname.c_str());
     client_sock.Send(send_info);
     client_sock.Recv(recv_info);
+    //·µ»Øreply 1±íÊ¾³É¹¦ 0±íÊ¾Ê§°Ü
+    return recv_info.REPLY;
 }
 
-//æ‰“å°è¿”å›ä¿¡æ¯å†…å®¹
-int Admin::printRecv(int cmd){
+//´òÓ¡·µ»ØĞÅÏ¢ÄÚÈİ
+void Admin::printRecv(int cmd){
     string recv(recv_info.output);
     switch(cmd){
         case SPY_CHARGEPORT:
-            cout << "å……ç”µæ¡©çŠ¶æ€å¦‚ä¸‹" << endl;
+            cout << "³äµç×®×´Ì¬ÈçÏÂ" << endl;
             cout << recv;
             break;
         case WAIT_CAR_DATA:
-            cout << "å……ç”µè½¦è¾†ä¿¡æ¯å¦‚ä¸‹" << endl;
+            cout << "³äµç³µÁ¾ĞÅÏ¢ÈçÏÂ" << endl;
             cout << recv;
             break;
         case DATA_STATISTICS:
-            cout << "æŠ¥è¡¨ä¿¡æ¯å¦‚ä¸‹" << endl;
+            cout << "±¨±íĞÅÏ¢ÈçÏÂ" << endl;
             cout << recv;
             break;
     }
-
 }
