@@ -24,10 +24,4 @@ public:
 	//virtual int deleteAccount() { return 0; }    //由子类实现
 	//int sendDeleteRequest(string usrname);    //发送注销请求报文
 
-	
-
-	//判断输入是否是合法选项(max: 最大选项序号)
-	bool isLegalChoice(string str, int max);
-	//输出选项
-	void printChoice(const string choice[], int size);
 };
