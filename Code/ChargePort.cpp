@@ -15,8 +15,8 @@ int ChargeTableID = 0;         // 用来生成充电详单ID
 // StopThreadPool *StopHead;      // 结束充电请求池队列头
 // StopThreadPool *StopTail;      // 结束充电请求池队列尾
 
-ChargeTablePool* ChargeHead; // 回复充电详单请求队列头
-ChargeTablePool* ChargeTail; // 回复充电详单请求队列尾
+ChargeTablePool* ChargeTableHead; // 回复充电详单请求队列头
+ChargeTablePool* ChargeTableTail; // 回复充电详单请求队列尾
 
 std::mutex Chargelock;      // 添加充电过程到线程池的互斥锁
 std::mutex ChargeTablelock; // 添加充电详单到请求池的互斥锁
