@@ -10,7 +10,8 @@ TSocket client_sock;
 
 	memset(&cli_Addr, 0, sizeof(cli_Addr));  //每个字节都用0填充
 	cli_Addr.sin_family = PF_INET;
-	cli_Addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+// 	cli_Addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	inet_pton(AF_INET, "127.0.0.1", &cli_Addr.sin_addr.s_addr);
 	cli_Addr.sin_port = htons(1234);
 
 	char bufSend[BUF_SIZE] = { 0 };	// 发送缓冲区
