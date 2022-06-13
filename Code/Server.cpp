@@ -1,6 +1,6 @@
 
 #include "Server.h"
-
+extern struct Info send_info, recv_info;
 /*Server类实现*/
 
 //服务器初始化
@@ -12,7 +12,7 @@ Server::Server()
     for (int i = 0; i < CHARGEPORT_NUM; i++)
     {
         //快充
-        if (i < 2)
+        if (i < FAST_NUM)
             cData[i] = new ChargePort(i, true, true);
         else
             cData[i] = new ChargePort(i, false, true);
@@ -892,6 +892,7 @@ int DBupdate::entryResolve(logEntry* lE, string line)
     lE->mode = stoi(temp[4]);
     lE->time = stoi(temp[5]);
     lE->cost = stoi(temp[6]);
+    return 0;
 }
 
 //新增用户信息
