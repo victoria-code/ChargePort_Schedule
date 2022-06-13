@@ -8,9 +8,9 @@ extern mutex mutexUsr, mutexSock;
 /*
 	专门用于接收报文的函数
 */
-void Customer:: keepRecv()
+void Customer::keepRecv()
 {
-	while(1)
+	while (1)
 	{
 		mutexSock.lock();
 		client_sock.Recv(recv_info);
@@ -54,11 +54,11 @@ socket
 int User::sendDeleteRequest(string usrname)
 {
 	send_info.cmd = DELETE_USER;
-	strcpy(send_info.UID, usrname.c_str());
+	strcpy_s(send_info.UID, usrname.c_str());
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
-	while(strcmp(recv_info.UID,this->usrname.c_str()))
+	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
 	return recv_info.REPLY;   //test
 }
@@ -83,7 +83,7 @@ int Customer::deleteAccount()
 	if (this->car && this->car->Reply && this->car->Reply->num == 0)
 	{ //如果正在充电
 		suc = -1;
-		string choice[] = {"等待结束", "强行停止"};
+		string choice[] = { "等待结束", "强行停止" };
 		cout << "您有充电任务正在进行，是否等待充电结束? ";
 		printChoice(choice, 2);
 		string id;
@@ -92,7 +92,7 @@ int Customer::deleteAccount()
 			cout << "请输入有效选项: ";
 			printChoice(choice, 2);
 		}
-		if (id == "1"){
+		if (id == "1") {
 			cout << "请等待充电结束后再次尝试注销" << endl;
 			return 0;
 		}
@@ -131,7 +131,7 @@ void Customer::showMenu()
 		cout << "**************************************************" << endl;
 		cout << "\n请输入您的选择: ";
 		string choice;
-		while(getline(cin, choice), !isLegalChoice(choice, 6))
+		while (getline(cin, choice), !isLegalChoice(choice, 6))
 			cout << "输入无效，请重新选择: ";
 
 		switch (choice[0] - '0')
@@ -181,7 +181,7 @@ int Customer::recharge()
 {
 	cout << "==========充值界面=========" << endl;
 	cout << "当前账户余额: " << this->balance << endl;
-	string choice[] = {"20", "50", "100", "200", "自定义"};
+	string choice[] = { "20", "50", "100", "200", "自定义" };
 	cout << "请选择您要充值的金额(单位：元): ";
 	printChoice(choice, 5);
 
@@ -222,17 +222,19 @@ int Customer::recharge()
 	//向服务器发送充值请求
 	mutexSock.lock();
 	int suc = sendUpdateBalanceRequest(this->balance + amount);
+	this->balance += amount;
+	cout << "充值成功！您当前的余额为：" << this->balance << "元。" << endl;
 	mutexSock.unlock();
-	if (suc == 0) //充值成功，更新本地数据
-	{
-		mutexUsr.lock();
-		this->balance += amount;
-		cout << "充值成功！您当前的余额为：" << this->balance << "元。" << endl;
-		mutexUsr.unlock();
-	}
-	else
-		cout << "充值失败，请稍后再试" << endl;
-	return suc;
+	//if (suc == 0) //充值成功，更新本地数据
+	//{
+	//	mutexUsr.lock();
+	//	this->balance += amount;
+	//	cout << "充值成功！您当前的余额为：" << this->balance << "元。" << endl;
+	//	mutexUsr.unlock();
+	//}
+	//else
+	//	cout << "充值失败，请稍后再试" << endl;
+	return 1;
 }
 
 /*
@@ -246,11 +248,11 @@ int Customer::sendUpdateBalanceRequest(double add)
 	strcpy_s(send_info.UID, this->usrname.c_str());
 
 	client_sock.Send(send_info);
-	client_sock.Recv(recv_info);
-	while (strcmp(recv_info.UID, this->usrname.c_str()))
-		client_sock.Recv(recv_info);
-	
-	return recv_info.REPLY;
+	//client_sock.Recv(recv_info);
+	//while (strcmp(recv_info.UID, this->usrname.c_str()))
+	//	client_sock.Recv(recv_info);
+
+	return 1;
 }
 
 /*
@@ -274,22 +276,37 @@ int Customer::newChargeRequest()
 		this->car->BatteryCap = kwh;	//设置电池容量
 	}
 
-	//int status = getChargeStatus(); //向服务器获取：是否正在充电
-	mutexSock.lock();
-	mutexUsr.lock();
-	sendQueueInfoRequest();
-	mutexSock.unlock();
-	// status=1表示正在充电，=0表示未正在充电
-	if (this->car && this->car->Reply && this->car->Reply->num == 0)
+	if (this->car->Reply)	//如果已经发出了充电请求
 	{
-		cout << "很抱歉，您已开始充电，无法提交新的充电请求" << endl;
-		return 0;
+		//首先检查是否已经开始充电
+		mutexSock.lock();
+		mutexUsr.lock();
+		sendQueueInfoRequest();
+		mutexSock.unlock();
+		// status=1表示正在充电，=0表示未正在充电
+		if (this->car && this->car->Reply && this->car->Reply->num == 0)
+		{
+			cout << "很抱歉，您已开始充电，无法提交新的充电请求" << endl;
+			mutexUsr.unlock();
+			return 0;
+		}
+
+		//若还未开始充电
+		cout << "系统检测到您已经提交过充电申请，请问是否要修改该申请？" << endl;
+		string choice[] = { "修改", "不修改" };
+		printChoice(choice, 2);
+		string co;
+		while (getline(cin, co), !isLegalChoice(co, 2))
+			cout << "输入无效，请重新选择: ";
+
+		if (co == "2")
+			return 0;
 	}
-	mutexUsr.unlock();
+
 
 	//获取用户输入的充电模式和充电量
 	int mode, charge; // charge: 充电量
-	string choice1[] = {"快充", "慢充"};
+	string choice1[] = { "快充", "慢充" };
 	cout << "请选择充电模式: ";
 	printChoice(choice1, 2);
 	string id;
@@ -301,8 +318,8 @@ int Customer::newChargeRequest()
 	mode = (id == "1" ? FAST : SLOW);
 
 	//市面上主流电动汽车的电池容量为15~60kWh
-	string choice2[] = {"10", "20", "30", "40", "50", "60"};
-	int charge_n[] = {0, 10, 20, 30, 40, 50, 60};
+	string choice2[] = { "10", "20", "30", "40", "50", "60" };
+	int charge_n[] = { 0, 10, 20, 30, 40, 50, 60 };
 	cout << "请输入充电量(单位：度): ";
 	printChoice(choice2, 6);
 	while (getline(cin, id), !isLegalChoice(id, 6))
@@ -322,11 +339,11 @@ int Customer::newChargeRequest()
 	//设置充电请求
 	/*
 	std::string usrname;  // 用户ID
-    int ChargeCap;        // 请求充电量(充电桩使用)
-    bool IsFastCharge;    // 快充还是慢充，快充为1
-    double BatteryCap;    // 电池容量
-    double BatteryNow;    // 当前电池电量
-    time_t StWaitTime;    // 开始等待时间
+	int ChargeCap;        // 请求充电量(充电桩使用)
+	bool IsFastCharge;    // 快充还是慢充，快充为1
+	double BatteryCap;    // 电池容量
+	double BatteryNow;    // 当前电池电量
+	time_t StWaitTime;    // 开始等待时间
 	*/
 	CarAsk *ask = new CarAsk;
 	ask->usrname = this->usrname;
@@ -348,13 +365,13 @@ int Customer::newChargeRequest()
 		cout << "提交充电请求成功，正在获取排队信息..." << endl;
 		cout << "您当前的排队号码为: " << this->car->Reply->queueNum << ", 前方还有" << this->car->Reply->waitingNum << "辆车在等待" << endl;
 		Customer *tmp = this;
-		std::thread sub{&Customer::keepRecv,&(*tmp)};
+		std::thread sub{ &Customer::keepRecv,&(*tmp) };
 		sub.detach();
 	}
-	else if(suc == -1){
+	else if (suc == -1) {
 		cout << "提交充电请求失败，车辆当前位于充电区，无法提交新的充电请求" << endl;
 	}
-	else if(suc == -2){
+	else if (suc == -2) {
 		cout << "提交充电请求失败，当前等候区已满，无法处理新的用户请求，请稍后再试" << endl;
 	}
 
@@ -369,7 +386,7 @@ int Customer::newChargeRequest()
 socket
 */
 int Customer::sendChargeRequest()
-{	
+{
 	send_info.cmd = CHARGE_REQUEST;//此处未记录电池容量 若server需要再加
 	strcpy_s(send_info.UID, this->usrname.c_str());
 	send_info.MODE = this->car->Ask->IsFastCharge == true ? FAST : SLOW;
@@ -404,7 +421,7 @@ int Customer::sendChargeRequest()
 // int Customer::cancelChargeRequest()
 int Customer::cancelCharge()
 {
-	if (this->car->Reply == nullptr)
+	if (!this->car || this->car->Reply == nullptr)
 	{
 		cout << "您当前还未发出充电申请！" << endl;
 		return -1;
@@ -431,7 +448,7 @@ int Customer::cancelCharge()
 			this->car->Reply = nullptr;
 			mutexUsr.unlock();
 		}
-		else if(suc == -1)
+		else if (suc == -1)
 			cout << "取消充电失败，您当前未提交充电请求" << endl;
 	}
 	return suc;
@@ -461,7 +478,7 @@ int Customer::sendCancelRequest()
 */
 int Customer::getQueueRes()
 {
-	if (this->car->Reply == nullptr)
+	if (!this->car || this->car->Reply == nullptr)
 	{
 		cout << "您当前还未发出充电申请，请申请充电后再查看排队结果！" << endl;
 		return -1;
@@ -566,6 +583,7 @@ string getTime(long long sec)
 	s = sec % 60;
 	return to_string(h) + "时" + to_string(m) + "分" + to_string(s) + "秒";
 }
+
 
 void Admin::showMenu()
 {
