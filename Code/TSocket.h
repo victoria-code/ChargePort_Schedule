@@ -8,7 +8,8 @@ using namespace std;
 
 #include "main.h"
 
-#define BUF_SIZE 200
+//#define BUF_SIZE 200
+#define BUF_SIZE 300
 
 #pragma comment(lib, "ws2_32.lib")  //加载 ws2_32.dll
 
