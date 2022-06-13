@@ -189,7 +189,8 @@ int Server::replyClient(Info usrInfo)
         // cmd: 104 充电请求
     case CHARGE_REQUEST: 
     {
-        CarAsk* ask = nullptr;
+        //CarAsk* ask = nullptr;
+        CarAsk *ask = new CarAsk;
         resolveRequest(usrInfo, ask);
         copeChargeRequest(ask);
     }
@@ -403,6 +404,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 res = "请求成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
+                send_info.MODE = ask->IsFastCharge;
                 server_sock.Send(send_info);
                 cout << res;
                 return 0;
@@ -424,6 +426,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 res = "请求修改成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
+                send_info.MODE = ask->IsFastCharge;
                 server_sock.Send(send_info);
                 cout << res;
                 return 0;
@@ -435,6 +438,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 res = "请求修改成功！\n当前排队号码：" + queueData[ask->usrname].first + "\n本模式下前车等待数量： " + to_string(queueData[ask->usrname].second) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
+                send_info.MODE = ask->IsFastCharge;
                 server_sock.Send(send_info);
                 cout << res;
                 return 0;
