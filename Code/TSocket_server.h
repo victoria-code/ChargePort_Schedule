@@ -1,8 +1,8 @@
-//#include <WinSock2.h>
-#include "windows.h"
+#include <Winsock.h>
 #include <string>
 #include <iostream>
 using namespace std;
+#pragma warning(disable : 4996)
 
 #include "main.h"
 
