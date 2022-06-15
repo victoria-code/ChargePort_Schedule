@@ -1,13 +1,13 @@
 #include "Server.h"
 
 struct Info send_info, recv_info;
-//æ¥æ”¶å……ç”µæ¡©ç”Ÿæˆçš„å……ç”µè¯¦å•å¹¶è¿”å›ç»™å¯¹åº”çš„ç”¨æˆ·
-//ç›‘æµ‹å……ç”µæ¡©ç©ºé—²çŠ¶æ€å¹¶è¿›è¡Œå«å·ã€è°ƒåº¦
+//½ÓÊÕ³äµç×®Éú³ÉµÄ³äµçÏêµ¥²¢·µ»Ø¸ø¶ÔÓ¦µÄÓÃ»§
+//¼à²â³äµç×®¿ÕÏĞ×´Ì¬²¢½øĞĞ½ĞºÅ¡¢µ÷¶È
 int recvCostTable(Server* server) {
     for (;;)
     {
 
-        //æ¥æ”¶åˆ°å……ç”µè¯¦å•
+        //½ÓÊÕµ½³äµçÏêµ¥
         if (ChargeTableHead&&ChargeTableHead->isAvailable)
         {
             for (;;)
@@ -18,71 +18,71 @@ int recvCostTable(Server* server) {
                 }
             }
             ChargeTablePool* next = ChargeTableHead->next;
-            server->sendDetail(next); //å‘å¯¹åº”çš„ç”¨æˆ·å‘é€å……ç”µè¯¦å•å¹¶å‘èµ·æ‰£è´¹ä¿¡æ¯
+            server->sendDetail(next); //Ïò¶ÔÓ¦µÄÓÃ»§·¢ËÍ³äµçÏêµ¥²¢·¢Æğ¿Û·ÑĞÅÏ¢
             delete ChargeTableHead;
             ChargeTableHead = next;
             ChargeTablelock.unlock();
         }
 
 
-        //ç›‘æµ‹åˆ°å……ç”µåŒºæœ‰ç©ºä½ä¸”ç­‰å€™åŒºå¯¹åº”æ¨¡å¼æœ‰è¯·æ±‚åˆ™è¿›è¡Œè°ƒåº¦
+        //¼à²âµ½³äµçÇøÓĞ¿ÕÎ»ÇÒµÈºòÇø¶ÔÓ¦Ä£Ê½ÓĞÇëÇóÔò½øĞĞµ÷¶È
         string fUser = "", tUser = "";
         int fID = -1, tID = -1, fTime = INT32_MAX, tTime = INT32_MAX;
 
-        server->getFreeCP(fID, tID, fTime, tTime); //è·å–ä¸åŒæ¨¡å¼ä¸‹ç­‰å¾…æ—¶é—´æœ€çŸ­çš„å……ç”µæ¡©ID
+        server->getFreeCP(fID, tID, fTime, tTime); //»ñÈ¡²»Í¬Ä£Ê½ÏÂµÈ´ıÊ±¼ä×î¶ÌµÄ³äµç×®ID
         if (fID == -1 && tID == -1)
             continue;
 
-        server->Calling(fUser, tUser);             //è·å–å³å°†è¢«å«å·çš„ç”¨æˆ·
+        server->Calling(fUser, tUser);             //»ñÈ¡¼´½«±»½ĞºÅµÄÓÃ»§
         if (fUser == "" && tUser == "")
             continue;
         
         if (fID != -1&&fUser!="")
         {
-            string res = "å½“å‰å¯ç”¨çš„å¿«å……å……ç”µæ¡©ï¼š" + to_string(fID) + "\né¢„è®¡ç­‰å¾…æ—¶é—´ï¼š" + to_string(fTime) + "s\n";            
+            string res = "µ±Ç°¿ÉÓÃµÄ¿ì³ä³äµç×®£º" + to_string(fID) + "\nÔ¤¼ÆµÈ´ıÊ±¼ä£º" + to_string(fTime) + "s\n";            
             auto it = server->WUser.find(fUser);
             if (it == server->WUser.end())
             {
-                cout << "[fatal Error]: æ— æ³•åœ¨ç­‰å€™åŒºæ‰¾åˆ°ç”¨æˆ·" << fUser << endl;
+                cout << "[fatal Error]: ÎŞ·¨ÔÚµÈºòÇøÕÒµ½ÓÃ»§" << fUser << endl;
                 return -1;
             }
-            //ç”¨æˆ·è¿›å…¥å……ç”µåŒº
+            //ÓÃ»§½øÈë³äµçÇø
             server->CUser[fUser] = it->second;
             server->WUser.erase(it);
             server->CUserID[fUser] = fID;
-            //å«å·ï¼Œè¿”å›ç»™ç”¨æˆ·å……ç”µæ¡©è°ƒåº¦ç»“æœï¼Œç”¨æˆ·è¿›å…¥å……ç”µåŒº
+            //½ĞºÅ£¬·µ»Ø¸øÓÃ»§³äµç×®µ÷¶È½á¹û£¬ÓÃ»§½øÈë³äµçÇø
             send_info.cmd = CALL;
             strcpy(send_info.UID, fUser.c_str());
             send_info.REPLY = fID;
-            res += "è¯·ç”¨æˆ·<" + fUser + ">è¿›å…¥å……ç”µåŒºï¼å……ç”µæ¡©ç¼–å·ä¸º" + to_string(fID) + "\n";
+            res += "ÇëÓÃ»§<" + fUser + ">½øÈë³äµçÇø£¡³äµç×®±àºÅÎª" + to_string(fID) + "\n";
             cout << res;
             strcpy(send_info.output, res.c_str());
             server_sock.Send(send_info);
-            //å‘å……ç”µæ¡©å‘é€è¯·æ±‚
+            //Ïò³äµç×®·¢ËÍÇëÇó
             server->forwardRequet(fUser, fID);
         }
 
         if (tID != -1&&tUser!="")
         {
-            string res = "å½“å‰å¯ç”¨çš„æ…¢å……å……ç”µæ¡©ï¼š" + to_string(tID) + "\né¢„è®¡ç­‰å¾…æ—¶é—´ï¼š" + to_string(tTime) + "s\n";
+            string res = "µ±Ç°¿ÉÓÃµÄÂı³ä³äµç×®£º" + to_string(tID) + "\nÔ¤¼ÆµÈ´ıÊ±¼ä£º" + to_string(tTime) + "s\n";
             auto it = server->WUser.find(tUser);
             if (it == server->WUser.end())
             {
-                cout << "[fatal Error]: æ— æ³•åœ¨ç­‰å€™åŒºæ‰¾åˆ°ç”¨æˆ·" << tUser << endl;
+                cout << "[fatal Error]: ÎŞ·¨ÔÚµÈºòÇøÕÒµ½ÓÃ»§" << tUser << endl;
                 return -1;
             }
-            //ç”¨æˆ·è¿›å…¥å……ç”µåŒº
+            //ÓÃ»§½øÈë³äµçÇø
             server->CUser[tUser] = it->second;
             server->WUser.erase(it);
             server->CUserID[tUser] = tID;
             send_info.cmd = CALL;
             strcpy(send_info.UID, tUser.c_str());
             send_info.REPLY = tID;
-            res += "è¯·ç”¨æˆ·<" + tUser + ">è¿›å…¥å……ç”µåŒºï¼å……ç”µæ¡©ç¼–å·ä¸º" + to_string(tID) + "\n";
+            res += "ÇëÓÃ»§<" + tUser + ">½øÈë³äµçÇø£¡³äµç×®±àºÅÎª" + to_string(tID) + "\n";
             cout << res;
             strcpy(send_info.output, res.c_str());
             server_sock.Send(send_info);
-            //å‘å……ç”µæ¡©å‘é€è¯·æ±‚
+            //Ïò³äµç×®·¢ËÍÇëÇó
             server->forwardRequet(tUser, tID);
         }
     }
@@ -90,22 +90,22 @@ int recvCostTable(Server* server) {
 
 int main() {
     
-    //cout << "æœåŠ¡å™¨æ˜¯å¦ä¸ºç¬¬ä¸€æ¬¡ä¸Šçº¿ï¼š";
-    int res=0;
-    //cin >> res;
+    cout << "·şÎñÆ÷ÊÇ·ñÎªµÚÒ»´ÎÉÏÏß£º";
+    int res;
+    cin >> res;
 
-    //æœåŠ¡å™¨åˆå§‹åŒ–
+    //·şÎñÆ÷³õÊ¼»¯
     Server server(res);
 
     BuildChargePortThread();
 
-    //æ–°å»ºçº¿ç¨‹è¯»å–å……ç”µæ¡©è¿”å›çš„å……ç”µè¯¦å•å¹¶è¿›è¡Œè°ƒåº¦
+    //ĞÂ½¨Ïß³Ì¶ÁÈ¡³äµç×®·µ»ØµÄ³äµçÏêµ¥²¢½øĞĞµ÷¶È
     thread withChargePort(recvCostTable, &server);
     withChargePort.detach();
     for (;;)
     {
         server_sock.Recv(recv_info);
-        cout<<"æ¥æ”¶åˆ°å®¢æˆ·ç«¯çš„è¯·æ±‚"<<endl;
+        cout<<"½ÓÊÕµ½¿Í»§¶ËµÄÇëÇó"<<endl;
         cout << "cmd: " << recv_info.cmd << endl;
         server.replyClient(recv_info);
 

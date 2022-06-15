@@ -13,6 +13,8 @@ extern TSocket server_sock;
 //记录充电桩历史记录信息
 #define HISTORY "C:\\Users\\Zheng siyang\\Desktop\\chargePort.txt"
 
+#define SERVICE_PRICE 0.8
+#define ELEC_PRICE 1
 
 //充电桩数目
 #define CHARGEPORT_NUM 5
@@ -77,7 +79,7 @@ class Server {
 public:
 
     /*服务器初始化、充电桩信息初始化*/
-    Server(int res,int PID);
+    Server(int res);
 
     /*服务器下线*/
     ~Server();
