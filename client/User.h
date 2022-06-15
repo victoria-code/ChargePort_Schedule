@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Car.h"    //充电相关
-#include "ChargePort.h"	//充电详单
+//#include "ChargePort.h"	//充电详单
 
 #include<iostream>
 #include<string>
@@ -41,17 +41,18 @@ public:
 class Customer : public User
 {
 public:
-	CostTable* info = nullptr; //充电详单
+	//CostTable* info = nullptr; //充电详单
 
 	Customer()
 	{
 		this->type = CUSTOMER;
 	}
 
-	Customer(string name, int t)
+	Customer(string name, int t, double ban)
 	{
 		this->usrname = name;
 		this->type = t;
+		this->balance = ban;
 	}
 
 	//消费者注销
@@ -66,15 +67,9 @@ public:
 	int sendUpdateBalanceRequest(double amount);	//发送余额更新报文
 
 
-	//获取用户余额(仅对消费者有意义)
-	double getUsrBalance();
-	//获取用户车辆信息（仅对消费者有意义）
-	Car* getCarInfo();
-
 	//提交充电请求
 	int newChargeRequest();
 	int sendChargeRequest();    //发送充电请求报文
-	int getChargeStatus();  //获取充电状态（是否正在充电）
 	//取消充电
 	int cancelCharge();
 	int sendCancelRequest();    //发送取消充电的报文
@@ -83,7 +78,7 @@ public:
 	int getQueueRes();
 	int sendQueueInfoRequest();
 
-	void keepRecv();	//持续接收消息的线程函数
+	int keepRecv();	//持续接收消息的线程函数
 
 };
 

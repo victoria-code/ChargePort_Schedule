@@ -19,10 +19,8 @@ int Client::logIN()
 	while (getline(cin, password), password == "")
 		;
 
-	mutexSock.lock();
 	//向服务器发送登录请求
 	suc = sendLogInRequest(usrname, password);
-	mutexSock.unlock();
 
 	//提示登录成功/失败信息
 	// suc=0表示成功，-1表示用户名错误，-2表示密码错误
@@ -37,6 +35,7 @@ int Client::logIN()
 
 	cout << "登录成功！" << endl;
 
+	
 	cur_usr->showMenu();
 
 	return suc;
@@ -60,7 +59,7 @@ int Client::sendLogInRequest(string usrname, string password)
 
 	if (recv_info.MODE == 1)	//Customer
 	{
-		cur_usr = new Customer(usrname, recv_info.MODE);
+		cur_usr = new Customer(usrname, recv_info.MODE, recv_info.BALANCE);
 	}
 	else
 		cur_usr = new Admin();

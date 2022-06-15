@@ -11,7 +11,7 @@ TSocket::TSocket()
 	memset(&cli_Addr, 0, sizeof(cli_Addr));  //每个字节都用0填充
 	cli_Addr.sin_family = PF_INET;
 	cli_Addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	cli_Addr.sin_port = htons(1234);
+	cli_Addr.sin_port = htons(5001);
 
 	char bufSend[BUF_SIZE] = { 0 };	// 发送缓冲区
 	char bufRecv[BUF_SIZE] = { 0 };	// 接收缓冲区
@@ -21,6 +21,9 @@ TSocket::TSocket()
 
 	//建立连接
 	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	//设置非阻塞模式
+	int iMode = 1;
+	int fdFlag = ioctlsocket(sock, FIONBIO, (u_long FAR*)&iMode);
 	if (connect(sock, (SOCKADDR*)&cli_Addr, sizeof(SOCKADDR)) == 1)
 		cout << "connect succeed!" << endl;
 
