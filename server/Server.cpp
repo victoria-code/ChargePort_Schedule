@@ -509,7 +509,7 @@ int Server::cancelCharge(string usrname)
     }
 
     //当前用户在等候区，则删除充电请求，离开等候区
-    if (WUser.find(usrname) != WUser.end())
+    if (WUser[usrname])
     {
         queueData.erase(usrname);
         WUser.erase(usrname);
@@ -526,7 +526,7 @@ int Server::cancelCharge(string usrname)
     if (!cU) {
         res = "充电取消失败！，用户既不在充电区也不在等候区！\n";
         strcpy_s(send_info.output, res.c_str());
-        send_info.REPLY = 0;
+        send_info.REPLY = -2;
         server_sock.Send(send_info);
         cout << res;
         return -2;
@@ -536,10 +536,16 @@ int Server::cancelCharge(string usrname)
      if (cData[num]->ChargingCar->usrname==usrname){
         //停止充电，返回详单,离开充电区
          int num = CUserID[usrname];
+         res = "充电取消成功，即将生成详单...\n";
+         strcpy_s(send_info.output, res.c_str());
+         send_info.REPLY =0;
+         server_sock.Send(send_info);
+
          cData[num]->DeleteCar(cData[num]->ChargingCar);
          CUser.erase(usrname);
          queueData.erase(usrname);
          CUserID.erase(usrname);
+         cout << res;
          return 0;
      }
     
