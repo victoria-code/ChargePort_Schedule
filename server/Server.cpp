@@ -1,18 +1,18 @@
 
 #include "Server.h"
 extern struct Info send_info, recv_info;
-/*ServerÀàÊµÏÖ*/
+/*Serverç±»å®ç°*/
 
-//·şÎñÆ÷³õÊ¼»¯
+//æœåŠ¡å™¨åˆå§‹åŒ–
 Server::Server(int res) {
-    //Êı¾İ¿â×Ô¶¯Í¬²½µ½±¾µØ<Êı¾İ¿â¹¹Ôìº¯ÊıÒÑ¾­Íê³É>
+    //æ•°æ®åº“è‡ªåŠ¨åŒæ­¥åˆ°æœ¬åœ°<æ•°æ®åº“æ„é€ å‡½æ•°å·²ç»å®Œæˆ>
 
-    //µÚÒ»´ÎÉÏÏß£¬²»ÔØÈëÀúÊ·ĞÅÏ¢
+    //ç¬¬ä¸€æ¬¡ä¸Šçº¿ï¼Œä¸è½½å…¥å†å²ä¿¡æ¯
     if (res == 0) {
-        //Æô¶¯²¢³õÊ¼»¯³äµç×®
+        //å¯åŠ¨å¹¶åˆå§‹åŒ–å……ç”µæ¡©
         for (int i = 0; i < CHARGEPORT_NUM; i++)
         {
-            //¿ì³ä
+            //å¿«å……
             if (i < FAST_NUM)
                 cData.push_back(new ChargePort(i, true, true, MAX_WAIT_NUM));
             else
@@ -20,23 +20,23 @@ Server::Server(int res) {
         }
     }
 
-    //·ñÔòÔØÈë³äµç×®ÀúÊ·ĞÅÏ¢
+    //å¦åˆ™è½½å…¥å……ç”µæ¡©å†å²ä¿¡æ¯
     else {
         ifstream hy;
         hy.open(HISTORY, ios::in | ios::out);
         if (hy.is_open()) {
             for (int i = 0; !hy.eof() && i < CHARGEPORT_NUM; i++) {
-                //³äµç×®Ğ´ÈëÀúÊ·ĞÅÏ¢
+                //å……ç”µæ¡©å†™å…¥å†å²ä¿¡æ¯
                 int CCnt = -1;
                 double CCost = -1, ECost = -1;
                 long long CTime = -1;
                 double TElect = -1;
                 double SCost = -1;
                 hy >> CCnt >> CCost >> ECost >> CTime >> TElect >> SCost;
-                //¿ì³ä
+                //å¿«å……
                 if (i < FAST_NUM)
                     cData.push_back(new ChargePort(i, true, true, MAX_WAIT_NUM, CCnt, CCost, ECost, CTime, TElect, SCost));
-                //Âı³ä
+                //æ…¢å……
                 else
                     cData.push_back(new ChargePort(i, false, true, MAX_WAIT_NUM, CCnt, CCost, ECost, CTime, TElect, SCost));
             }
@@ -46,12 +46,12 @@ Server::Server(int res) {
         }
     }
 
-    //³õÊ¼»¯ÅÅ¶ÓĞÅÏ¢
+    //åˆå§‹åŒ–æ’é˜Ÿä¿¡æ¯
     FNum = TNum = 0;
-    cout << "·şÎñÆ÷³õÊ¼»¯Íê³É£¡" << endl;
+    cout << "æœåŠ¡å™¨åˆå§‹åŒ–å®Œæˆï¼" << endl;
 }
 
-//·şÎñÆ÷ÏÂÏßÇ°Í¬²½Êı¾İ¿â
+//æœåŠ¡å™¨ä¸‹çº¿å‰åŒæ­¥æ•°æ®åº“
 Server::~Server()
 {
     database.update();
@@ -59,20 +59,20 @@ Server::~Server()
 
 /*database Interface*/
 
-//ÓÃ»§ĞÅÏ¢²éÑ¯---ok
+//ç”¨æˆ·ä¿¡æ¯æŸ¥è¯¢---ok
 int Server::usrFind(string usrname, usrEntry* res)
 {
     res= database.usrData[usrname];
-    //ÓÃ»§²»´æÔÚ
+    //ç”¨æˆ·ä¸å­˜åœ¨
     if (!res )
     {
-        cout << "[From Database]: ÓÃ»§"<<usrname<<"²»´æÔÚ£¡" << endl;
+        cout << "[From Database]: ç”¨æˆ·"<<usrname<<"ä¸å­˜åœ¨ï¼" << endl;
         return -1;
     }
     return 0;
 }
 
-//ÓÃ»§³äµç¼ÇÂ¼²éÑ¯
+//ç”¨æˆ·å……ç”µè®°å½•æŸ¥è¯¢
 int Server::logFind(string usrname, vector<logEntry*>& res)
 {
     auto it = database.logData.find(usrname);
@@ -85,29 +85,29 @@ int Server::logFind(string usrname, vector<logEntry*>& res)
     return 0;
 }
 
-//ÓÃ»§ĞÅÏ¢¸üĞÂ<ĞÂÔöÓÃ»§£¬ÓÃ»§ĞÅÏ¢¸Ä±ä£¬ÓÃ»§×¢Ïú>--ok
+//ç”¨æˆ·ä¿¡æ¯æ›´æ–°<æ–°å¢ç”¨æˆ·ï¼Œç”¨æˆ·ä¿¡æ¯æ”¹å˜ï¼Œç”¨æˆ·æ³¨é”€>--ok
 int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
 {
     if (!uE) {
-        cout << "[fatal error]:uEÎª¿Õ" << endl;
+        cout << "[fatal error]:uEä¸ºç©º" << endl;
         return -1;
     }
 
-    //×¢Ïú
+    //æ³¨é”€
     if (to_delete)
     {
-        //´ı×¢ÏúµÄÓÃ»§Ãû²»´æÔÚ
+        //å¾…æ³¨é”€çš„ç”¨æˆ·åä¸å­˜åœ¨
         if (database.usrData[uE->usrname] == nullptr)
         {
-            cout << "´ı×¢ÏúµÄÕË»§<" << uE->usrname << ">²»´æÔÚ£¡" << endl;
+            cout << "å¾…æ³¨é”€çš„è´¦æˆ·<" << uE->usrname << ">ä¸å­˜åœ¨ï¼" << endl;
             return 0;
         }
         database.usrData.erase(uE->usrname);
-        cout << "ÕË»§<" << uE->usrname << ">×¢Ïú³É¹¦£¡" << endl;
+        cout << "è´¦æˆ·<" << uE->usrname << ">æ³¨é”€æˆåŠŸï¼" << endl;
         return 0;
     }
 
-    //×¢²á or ÓÃ»§ĞÅÏ¢¸Ä±ä
+    //æ³¨å†Œ or ç”¨æˆ·ä¿¡æ¯æ”¹å˜
     if(database.usrData[uE->usrname])
         database.usrData.erase(uE->usrname);
     database.usrData[uE->usrname] = uE;
@@ -115,43 +115,45 @@ int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
 }
 
 
-//ÏòÓÃ»§·¢ËÍ¶ÔÓ¦µÄ³äµçÏêµ¥²¢½øĞĞ¿Û·Ñ--ok
+//å‘ç”¨æˆ·å‘é€å¯¹åº”çš„å……ç”µè¯¦å•å¹¶è¿›è¡Œæ‰£è´¹--ok
 void Server::sendDetail(ChargeTablePool* next)
 {
     send_info.cmd = DETAIL;
     strcpy_s(send_info.UID, next->ChargeTable.usrname.c_str());
 
-    string res = "<<<<<<<<<<<<<<<<<<<<³äµçÏêµ¥>>>>>>>>>>>>>>>>>>>>";
-    res += "Ïêµ¥±àºÅ: " + to_string(next->ChargeTable.ChargeID) + "\n";
-    res += "Ïêµ¥Éú³ÉÊ±¼ä: " + getCurTime(next->ChargeTable.CreateTableTime) + "\n";
-    res += "³äµç×®±àºÅ: " + to_string(next->ChargeTable.SID) + "\n";
-    res += "³äµçÄ£Ê½: ";
+    string res = "<<<<<<<<<<<<<<<<<<<<å……ç”µè¯¦å•>>>>>>>>>>>>>>>>>>>>";
+    res += "è¯¦å•ç¼–å·: " + to_string(next->ChargeTable.ChargeID) + "\n";
+    res += "è¯¦å•ç”Ÿæˆæ—¶é—´: " + getCurTime(next->ChargeTable.CreateTableTime) + "\n";
+    res += "å……ç”µæ¡©ç¼–å·: " + to_string(next->ChargeTable.SID) + "\n";
+    res += "å……ç”µæ¨¡å¼: ";
     if (next->ChargeTable.IsFastCharge)
         res += "FAST\n";
     else
         res += "SLOW\n";
-    res += "ÓÃ»§Ãû:" + next->ChargeTable.usrname + "\n";
-    res += "Æô¶¯Ê±¼ä:" + getCurTime(next->ChargeTable.StartTime) + "\n";
-    res += "Í£Ö¹Ê±¼ä:" + getCurTime(next->ChargeTable.End_Time) + "\n";
-    res += "×Ü³äµçÁ¿:" + to_string(next->ChargeTable.TotalElect) + "\n";
-    res += "³äµçÊ±³¤:" + to_string(next->ChargeTable.ChargeTime) + "s\n";
-    res += "·şÎñ·Ñ:" + to_string(next->ChargeTable.ServiceCost) + "\n";
-    res += "µç·Ñ£º" + to_string(next->ChargeTable.ElectCost) + "\n";
-    res += "×Ü·ÑÓÃ:" + to_string(next->ChargeTable.ChargeCost) + "\n";
+    res += "ç”¨æˆ·å:" + next->ChargeTable.usrname + "\n";
+    res += "å¯åŠ¨æ—¶é—´:" + getCurTime(next->ChargeTable.StartTime) + "\n";
+    res += "åœæ­¢æ—¶é—´:" + getCurTime(next->ChargeTable.End_Time) + "\n";
+    res += "æ€»å……ç”µé‡:" + to_string(next->ChargeTable.TotalElect) + "\n";
+    res += "å……ç”µæ—¶é•¿:" + to_string(next->ChargeTable.ChargeTime) + "s\n";
+    res += "æœåŠ¡è´¹:" + to_string(next->ChargeTable.ServiceCost) + "\n";
+    res += "ç”µè´¹ï¼š" + to_string(next->ChargeTable.ElectCost) + "\n";
+    res += "æ€»è´¹ç”¨:" + to_string(next->ChargeTable.ChargeCost) + "\n";
     res += "--------------------------------------------------------\n";
-    //¿Û·Ñ
+    //æ‰£è´¹
     balanceChange(next->ChargeTable.usrname, -next->ChargeTable.ChargeCost);
+    database.update();
     send_info.BALANCE = database.usrData[next->ChargeTable.usrname]->balance;
-    res += "<¿Û·Ñ³É¹¦>:µ±Ç°Óà¶î£º" + to_string(send_info.BALANCE) + "Ôª\n";
+    res += "<æ‰£è´¹æˆåŠŸ>:å½“å‰ä½™é¢ï¼š" + to_string(send_info.BALANCE) + "å…ƒ\n";
     CUser.erase(next->ChargeTable.usrname);
     CUserID.erase(next->ChargeTable.usrname);
     queueData.erase(next->ChargeTable.usrname);
     strcpy_s(send_info.output, res.c_str());
+   
     send_info.REPLY = 0;
     server_sock.Send(send_info);
 }
 
-//·şÎñÆ÷¶ËÏò³äµç×®×ª·¢³äµçÇëÇó£¨³äµçÇø£©--ok
+//æœåŠ¡å™¨ç«¯å‘å……ç”µæ¡©è½¬å‘å……ç”µè¯·æ±‚ï¼ˆå……ç”µåŒºï¼‰--ok
 void Server::forwardRequet(string usrname, int SID)
 {
     CarReply reply;
@@ -159,10 +161,10 @@ void Server::forwardRequet(string usrname, int SID)
     CarAsk* ask = this->CUser[usrname];
     reply.Ask = *(ask);
     reply.SID = SID;
-    reply.num = cData[SID]->IsCharging; //µ±Ç°ÅÅ¶Ó¶ÓÁĞ±àºÅ 0 or 1
-    reply.MODE = qNum[0];               //³äµçÄ£Ê½F or T
-    reply.queueNum = qNum;              //ÅÅ¶ÓºÅÂë
-    reply.waitingNum = reply.num;       //Ç°³µµÈ´ıÊıÁ¿0 or 1
+    reply.num = cData[SID]->IsCharging; //å½“å‰æ’é˜Ÿé˜Ÿåˆ—ç¼–å· 0 or 1
+    reply.MODE = qNum[0];               //å……ç”µæ¨¡å¼F or T
+    reply.queueNum = qNum;              //æ’é˜Ÿå·ç 
+    reply.waitingNum = reply.num;       //å‰è½¦ç­‰å¾…æ•°é‡0 or 1
 
     Car* car=new Car();
     car->usrname = usrname;
@@ -171,13 +173,13 @@ void Server::forwardRequet(string usrname, int SID)
     car->Ask = ask;
     car->Reply = &reply;
 
-    //×ª·¢³äµçÇëÇó
+    //è½¬å‘å……ç”µè¯·æ±‚
     cData[SID]->AddCar(reply, car);
 }
 
 /*with Client*/
 
-//ÏìÓ¦ÓÃ»§¿Í»§¶ËÇëÇó
+//å“åº”ç”¨æˆ·å®¢æˆ·ç«¯è¯·æ±‚
 int Server::replyClient(Info usrInfo)
 {
     string Usrname = string(usrInfo.UID);
@@ -185,31 +187,31 @@ int Server::replyClient(Info usrInfo)
     string qNum,role;
     switch (usrInfo.cmd)
     {
-        // cmd:100 µÇÂ¼ÑéÖ¤
+        // cmd:100 ç™»å½•éªŒè¯
     case LOG_IN:
         logIn(Usrname, string(usrInfo.PWD), uE);
         break;
 
-        // cmd:101 ×¢²áÑéÖ¤
+        // cmd:101 æ³¨å†ŒéªŒè¯
     case SIGN_UP:
         role = (usrInfo.MODE == 1) ? "customer" : "admin";
         signUp(Usrname, string(usrInfo.PWD), role);
         database.update();
         break;
 
-        // cmd:102 ³äÖµ¡¢¿Û·Ñ
+        // cmd:102 å……å€¼ã€æ‰£è´¹
     case Balance_CHANGE:
         balanceChange(Usrname, usrInfo.BALANCE);
         database.update();
         break;
 
-        // cmd:103 ×¢Ïú
+        // cmd:103 æ³¨é”€
     case DELETE_USER:
         deleteUsr(Usrname);
         database.update();
         break;
 
-        // cmd: 104 ³äµçÇëÇó
+        // cmd: 104 å……ç”µè¯·æ±‚
     case CHARGE_REQUEST: 
     {
         CarAsk* ask = new CarAsk();
@@ -220,38 +222,38 @@ int Server::replyClient(Info usrInfo)
     }
         break;
 
-        // cmd: 105 È¡Ïû³äµç
+        // cmd: 105 å–æ¶ˆå……ç”µ
     case CANCEL_REQUEST:
         cancelCharge(Usrname);
         break;
 
-        // cmd: 106 »ñÈ¡ÅÅ¶ÓĞÅÏ¢
+        // cmd: 106 è·å–æ’é˜Ÿä¿¡æ¯
     case GET_QUEUE_DATA:
         int curWait;
         getQueueData(Usrname, qNum, curWait);
         break;
 
-        //cmd: 200 »ñÈ¡³äµç×®×´Ì¬ĞÅÏ¢(ADMIN)
+        //cmd: 200 è·å–å……ç”µæ¡©çŠ¶æ€ä¿¡æ¯(ADMIN)
     case SPY_CHARGEPORT:
         getChargePortData(Usrname);
         break;
 
-        //cmd:201 ²é¿´µÈºò³äµç×®·şÎñµÄ³µÁ¾ĞÅÏ¢(ADMIN)
+        //cmd:201 æŸ¥çœ‹ç­‰å€™å……ç”µæ¡©æœåŠ¡çš„è½¦è¾†ä¿¡æ¯(ADMIN)
     case WAIT_CAR_DATA:
         getCarData(Usrname);
         break;
 
-        //cmd:202 ²é¿´±¨±í£¨ADMIN)
+        //cmd:202 æŸ¥çœ‹æŠ¥è¡¨ï¼ˆADMIN)
     case DATA_STATISTICS:
         getReport(Usrname);
         break;
 
-        //cmd:203 ¿ªÆô³äµç×®
+        //cmd:203 å¼€å¯å……ç”µæ¡©
     case OPEN_CHARGEPORT:
         openCP(Usrname, usrInfo.REPLY);
         break;
 
-        //cmd:204 ¹Ø±Õ³äµç×®
+        //cmd:204 å…³é—­å……ç”µæ¡©
     case CLOSE_CHARGEPORT:
         closeCP(Usrname, usrInfo.REPLY);
         break;
@@ -261,37 +263,37 @@ int Server::replyClient(Info usrInfo)
     return 0;
 }
 
-// cmd:100 µÇÂ¼ÑéÖ¤,µÇÂ¼³É¹¦Ôò»ñÈ¡ÓÃ»§ĞÅÏ¢ok
+// cmd:100 ç™»å½•éªŒè¯,ç™»å½•æˆåŠŸåˆ™è·å–ç”¨æˆ·ä¿¡æ¯ok
 int Server::logIn(string usrname, string passwd, usrEntry* uE)
 {
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = LOG_IN;
-    cout << "µÇÂ¼ÑéÖ¤..." << endl;
+    cout << "ç™»å½•éªŒè¯..." << endl;
     string res;
-    //¼ìÑéÓÃ»§ÊÇ·ñ´æÔÚ
+    //æ£€éªŒç”¨æˆ·æ˜¯å¦å­˜åœ¨
     if (usrFind(usrname, uE) != 0)
     {
-        res = "ÓÃ»§Ãû<" + usrname + ">²»´æÔÚ£¡" + "\n";
+        res = "ç”¨æˆ·å<" + usrname + ">ä¸å­˜åœ¨ï¼" + "\n";
         cout << res << endl;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         return -1;
     }
-    //ÅĞ¶ÏÃÜÂëÊÇ·ñÕıÈ·
+    //åˆ¤æ–­å¯†ç æ˜¯å¦æ­£ç¡®
     else if (passwd != uE->passwd)
     {
-        res = "ÓÃ»§ÃûºÍÃÜÂë²»Æ¥Åä£¡\n";
+        res = "ç”¨æˆ·åå’Œå¯†ç ä¸åŒ¹é…ï¼\n";
         cout << res;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info); 
         return -2;
     }
-    //µÇÂ¼³É¹¦
+    //ç™»å½•æˆåŠŸ
     else
     {
-        res = "µÇÂ¼³É¹¦£¡\n";
+        res = "ç™»å½•æˆåŠŸï¼\n";
         cout << res;
         send_info.MODE = 1;
         if (uE->role == "admin")
@@ -304,27 +306,27 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
     }
 }
 
-// cmd:101 ×¢²áÈÏÖ¤ok
+// cmd:101 æ³¨å†Œè®¤è¯ok
 int Server::signUp(string usrname, string passwd, string role)
 {
-    cout << "[×¢²áÑéÖ¤] : ";
+    cout << "[æ³¨å†ŒéªŒè¯] : ";
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = SIGN_UP;
     string res;
-    //ÓÃ»§Ãû³¤¶È·Ç·¨
+    //ç”¨æˆ·åé•¿åº¦éæ³•
     if (usrname.size() > 20 || usrname.size() < 2||usrname.find(" ")!=string::npos)
     {
-        res = "ÓÃ»§Ãû³¤¶È±ØĞëÔÚ5~20Ö®¼ä,ÇÒ²»ÄÜ°üº¬¿Õ¸ñ!\n";
+        res = "ç”¨æˆ·åé•¿åº¦å¿…é¡»åœ¨5~20ä¹‹é—´,ä¸”ä¸èƒ½åŒ…å«ç©ºæ ¼!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
         return -1;
     }
-    //ÓÃ»§ÃûÒÑ´æÔÚ
+    //ç”¨æˆ·åå·²å­˜åœ¨
     else if (database.usrData[usrname])
     {
-        res = "ÓÃ»§ÃûÒÑ´æÔÚ£¡\n";
+        res = "ç”¨æˆ·åå·²å­˜åœ¨ï¼\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info);
@@ -333,7 +335,7 @@ int Server::signUp(string usrname, string passwd, string role)
     }
 
     usrEntry* uE = new usrEntry();
-    cout << usrname << " " << "×¢²á³É¹¦!" << endl;
+    cout << usrname << " " << "æ³¨å†ŒæˆåŠŸ!" << endl;
     uE->usrname = usrname;
     uE->passwd = passwd;
     uE->role = role;
@@ -346,40 +348,40 @@ int Server::signUp(string usrname, string passwd, string role)
     return 0;
 }
 
-// cmd:102 ³äÖµ¡¢¿Û·Ñ£¨amountÎªÕı±íÊ¾³äÖµºóµÄÓà¶î£¬Îª¸º±íÊ¾Òª¿Û³ıµÄ½ğ¶î£©---ok
+// cmd:102 å……å€¼ã€æ‰£è´¹ï¼ˆamountä¸ºæ­£è¡¨ç¤ºå……å€¼åçš„ä½™é¢ï¼Œä¸ºè´Ÿè¡¨ç¤ºè¦æ‰£é™¤çš„é‡‘é¢ï¼‰---ok
 int Server::balanceChange(string usrname, int amount)
 {
     strcpy_s(send_info.UID, usrname.c_str());
     usrEntry* uE= database.usrData[usrname];
     string res;
 
-    //³äÖµ
+    //å……å€¼
     if (amount > 0)
     {
         uE->balance = amount;
-        res = "<" + usrname + "³äÖµ³É¹¦>: ";
-        res += "µ±Ç°Óà¶îÎª" + to_string(uE->balance) + "Ôª!\n";
+        res = "<" + usrname + "å……å€¼æˆåŠŸ>: ";
+        res += "å½“å‰ä½™é¢ä¸º" + to_string(uE->balance) + "å…ƒ!\n";
         cout << res;
     }
-    //¿Û·Ñ
+    //æ‰£è´¹
     if (amount < 0)
     {
         uE->balance += amount;
-        res = "<" + usrname + "¿Û·Ñ³É¹¦>: ";
-        res += "µ±Ç°Óà¶îÎª" + to_string(uE->balance) + "Ôª!\n";
+        res = "<" + usrname + "æ‰£è´¹æˆåŠŸ>: ";
+        res += "å½“å‰ä½™é¢ä¸º" + to_string(uE->balance) + "å…ƒ!\n";
         cout << res;
     }
     return 0;
 }
 
-// cmd:103 ÓÃ»§×¢Ïúok
+// cmd:103 ç”¨æˆ·æ³¨é”€ok
 int Server::deleteUsr(string usrname)
 {
     usrEntry* uE=new usrEntry();
     uE->usrname = usrname;
     send_info.cmd = DELETE_USER;
     strcpy_s(send_info.UID, usrname.c_str());
-    string res = "ÓÃ»§<" + usrname + ">×¢Ïú³É¹¦!\n";
+    string res = "ç”¨æˆ·<" + usrname + ">æ³¨é”€æˆåŠŸ!\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
@@ -387,17 +389,17 @@ int Server::deleteUsr(string usrname)
     return Server::usrDataUpdate(true, uE);
 }
 
-// cmd:104 ´¦ÀíµÈºòÇøÄÚ³µÁ¾µÄ³äµçÉêÇëok
+// cmd:104 å¤„ç†ç­‰å€™åŒºå†…è½¦è¾†çš„å……ç”µç”³è¯·ok
 int Server::copeChargeRequest(CarAsk* ask)
 {
     strcpy_s(send_info.UID, ask->usrname.c_str());
     send_info.cmd = CHARGE_REQUEST;
     send_info.MODE = ask->IsFastCharge;
     string res;
-    //³äµçÇøÄÚÎŞ·¨Ìá½»¡¢ĞŞ¸ÄÓÃ»§ÇëÇó
+    //å……ç”µåŒºå†…æ— æ³•æäº¤ã€ä¿®æ”¹ç”¨æˆ·è¯·æ±‚
     if (CUser[ask->usrname])
     {
-        res = "³µÁ¾µ±Ç°Î»ÓÚ³äµçÇø£¬ÎŞ·¨ĞŞ¸Ä³äµçÇëÇó£¡";
+        res = "è½¦è¾†å½“å‰ä½äºå……ç”µåŒºï¼Œæ— æ³•ä¿®æ”¹å……ç”µè¯·æ±‚ï¼";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -407,34 +409,39 @@ int Server::copeChargeRequest(CarAsk* ask)
     else
     {
         CarAsk* w = WUser[ask->usrname];
-        //ÈôÓÃ»§µÚÒ»´ÎÌá½»³äµçÇëÇó
+        //è‹¥ç”¨æˆ·ç¬¬ä¸€æ¬¡æäº¤å……ç”µè¯·æ±‚
         if (w == nullptr)
         {
-            //ÈôµÈºòÇøÒÑÂúÔòÎŞ·¨´¦ÀíÇëÇó
+            //è‹¥ç­‰å€™åŒºå·²æ»¡åˆ™æ— æ³•å¤„ç†è¯·æ±‚
             if (WUser.size() > MAX_WAIT_NUM)
             {
-                res = "µ±Ç°µÈºòÇøÒÑÂú£¬ÎŞ·¨´¦ÀíĞÂµÄÓÃ»§ÇëÇó£¡\n";
+                res = "å½“å‰ç­‰å€™åŒºå·²æ»¡ï¼Œæ— æ³•å¤„ç†æ–°çš„ç”¨æˆ·è¯·æ±‚ï¼\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = -2;
                 server_sock.Send(send_info);
                 cout << res;
                 return -2;
             }
-            //·ñÔòÉú³ÉÅÅ¶ÓºÅÂë²¢¼ÇÂ¼Ç°³µµÈ´ıÊıÄ¿
+            //å¦åˆ™ç”Ÿæˆæ’é˜Ÿå·ç å¹¶è®°å½•å‰è½¦ç­‰å¾…æ•°ç›®
             else
             {
                 double estCost=ask->BatteryCap*(SERVICE_PRICE+ELEC_PRICE);
                 if (database.usrData[ask->usrname]->balance < estCost) {
                     send_info.REPLY = -3;
+                    res = "ç”¨æˆ·ä½™é¢ä¸è¶³ï¼Œè¯·å……å€¼åå†æäº¤å……ç”µè¯·æ±‚ï¼\n";
+                    strcpy_s(send_info.output, res.c_str());
+                    server_sock.Send(send_info);
+                    cout << res;
+                    return -3;
                 }
 
                 reqRes[ask->usrname] = false;
                 WUser[ask->usrname] = ask;
                 string qNum = queueNumGenerate(ask->usrname, ask->IsFastCharge);
                 queueData[ask->usrname].first = qNum;
-                int curWait = getCurWaitNum(ask->usrname); //»ñÈ¡Ç°³µµÈ´ıÊıÄ¿
+                int curWait = getCurWaitNum(ask->usrname); //è·å–å‰è½¦ç­‰å¾…æ•°ç›®
                 queueData[ask->usrname].second = curWait;
-                res = "ÇëÇó³É¹¦£¡\nµ±Ç°ÅÅ¶ÓºÅÂë£º" + qNum + "\n±¾Ä£Ê½ÏÂÇ°³µµÈ´ıÊıÁ¿£º " + to_string(curWait) + "\n";
+                res = "è¯·æ±‚æˆåŠŸï¼\nå½“å‰æ’é˜Ÿå·ç ï¼š" + qNum + "\næœ¬æ¨¡å¼ä¸‹å‰è½¦ç­‰å¾…æ•°é‡ï¼š " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
@@ -443,21 +450,21 @@ int Server::copeChargeRequest(CarAsk* ask)
                 return 0;
             }
         }
-        //ÈôÓÃ»§Ìá½»¹ıÇëÇóÔò¸²¸ÇÔ­ÓĞÇëÇó
+        //è‹¥ç”¨æˆ·æäº¤è¿‡è¯·æ±‚åˆ™è¦†ç›–åŸæœ‰è¯·æ±‚
         else
         {
-            //ÈôĞŞ¸ÄÁË³äµçÄ£Ê½ÔòÖØĞÂÉú³ÉÅÅ¶ÓºÅÂë
+            //è‹¥ä¿®æ”¹äº†å……ç”µæ¨¡å¼åˆ™é‡æ–°ç”Ÿæˆæ’é˜Ÿå·ç 
             if (w->IsFastCharge != ask->IsFastCharge)
             {
                 reqRes[ask->usrname] = false;
                 queueData.erase(ask->usrname);
-                //ÖØĞÂÉú³ÉÅÅ¶ÓºÅÂëºÍÇ°³µµÈ´ıÊıÁ¿
+                //é‡æ–°ç”Ÿæˆæ’é˜Ÿå·ç å’Œå‰è½¦ç­‰å¾…æ•°é‡
                 string qNum = queueNumGenerate(ask->usrname, ask->IsFastCharge);
                 this->queueData[ask->usrname].first = qNum;
                 int curWait = getCurWaitNum(ask->usrname);
                 this->queueData[ask->usrname].second = curWait;
                 WUser[ask->usrname] = ask;
-                res = "ÇëÇóĞŞ¸Ä³É¹¦£¡\nµ±Ç°ÅÅ¶ÓºÅÂë£º" + qNum + "\n±¾Ä£Ê½ÏÂÇ°³µµÈ´ıÊıÁ¿£º " + to_string(curWait) + "\n";
+                res = "è¯·æ±‚ä¿®æ”¹æˆåŠŸï¼\nå½“å‰æ’é˜Ÿå·ç ï¼š" + qNum + "\næœ¬æ¨¡å¼ä¸‹å‰è½¦ç­‰å¾…æ•°é‡ï¼š " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
@@ -465,12 +472,12 @@ int Server::copeChargeRequest(CarAsk* ask)
                 reqRes[ask->usrname] = true;
                 return 0;
             }
-            //·ñÔòÅÅ¶ÓºÅ²»±ä,¸²¸ÇÔ­ÓĞÇëÇó
+            //å¦åˆ™æ’é˜Ÿå·ä¸å˜,è¦†ç›–åŸæœ‰è¯·æ±‚
             else
             {
                 reqRes[ask->usrname] = false;
                 WUser[ask->usrname] = ask;
-                res = "ÇëÇóĞŞ¸Ä³É¹¦£¡\nµ±Ç°ÅÅ¶ÓºÅÂë£º" + queueData[ask->usrname].first + "\n±¾Ä£Ê½ÏÂÇ°³µµÈ´ıÊıÁ¿£º " + to_string(queueData[ask->usrname].second) + "\n";
+                res = "è¯·æ±‚ä¿®æ”¹æˆåŠŸï¼\nå½“å‰æ’é˜Ÿå·ç ï¼š" + queueData[ask->usrname].first + "\næœ¬æ¨¡å¼ä¸‹å‰è½¦ç­‰å¾…æ•°é‡ï¼š " + to_string(queueData[ask->usrname].second) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
@@ -482,7 +489,7 @@ int Server::copeChargeRequest(CarAsk* ask)
     }
 }
 
-// cmd:105 È¡Ïû³äµç--ok
+// cmd:105 å–æ¶ˆå……ç”µ--ok
 int Server::cancelCharge(string usrname)
 {
     send_info.cmd = CANCEL_REQUEST;
@@ -490,10 +497,10 @@ int Server::cancelCharge(string usrname)
     string res;
     auto qData = queueData.find(usrname);
 
-    //µ±Ç°ÓÃ»§Ã»ÓĞÎ´´¦ÀíµÄ³äµçÇëÇó
+    //å½“å‰ç”¨æˆ·æ²¡æœ‰æœªå¤„ç†çš„å……ç”µè¯·æ±‚
     if (qData == queueData.end())
     {
-        res = "Î´ÕÒµ½ÓÃ»§" + usrname + "µÄ³äµçÇëÇó!" + "\n";
+        res = "æœªæ‰¾åˆ°ç”¨æˆ·" + usrname + "çš„å……ç”µè¯·æ±‚!" + "\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -501,12 +508,12 @@ int Server::cancelCharge(string usrname)
         return -1;
     }
 
-    //µ±Ç°ÓÃ»§ÔÚµÈºòÇø£¬ÔòÉ¾³ı³äµçÇëÇó£¬Àë¿ªµÈºòÇø
+    //å½“å‰ç”¨æˆ·åœ¨ç­‰å€™åŒºï¼Œåˆ™åˆ é™¤å……ç”µè¯·æ±‚ï¼Œç¦»å¼€ç­‰å€™åŒº
     if (WUser.find(usrname) != WUser.end())
     {
         queueData.erase(usrname);
         WUser.erase(usrname);
-        res = "È¡Ïû³äµç³É¹¦£¬³äµçÇëÇóÒÑÉ¾³ı£¡\n";
+        res = "å–æ¶ˆå……ç”µæˆåŠŸï¼Œå……ç”µè¯·æ±‚å·²åˆ é™¤ï¼\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
@@ -517,7 +524,7 @@ int Server::cancelCharge(string usrname)
     CarAsk* cU = CUser[usrname];
     int num = CUserID[usrname];
     if (!cU) {
-        res = "³äµçÈ¡ÏûÊ§°Ü£¡£¬ÓÃ»§¼È²»ÔÚ³äµçÇøÒ²²»ÔÚµÈºòÇø£¡\n";
+        res = "å……ç”µå–æ¶ˆå¤±è´¥ï¼ï¼Œç”¨æˆ·æ—¢ä¸åœ¨å……ç”µåŒºä¹Ÿä¸åœ¨ç­‰å€™åŒºï¼\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
@@ -525,9 +532,9 @@ int Server::cancelCharge(string usrname)
         return -2;
     }
     
-    //ÈôÕıÔÚ³äµç(Ç°³µµÈ´ıÊıÁ¿Îª0)ÔòÌáÇ°½áÊø³äµç 
+    //è‹¥æ­£åœ¨å……ç”µ(å‰è½¦ç­‰å¾…æ•°é‡ä¸º0)åˆ™æå‰ç»“æŸå……ç”µ 
      if (cData[num]->ChargingCar->usrname==usrname){
-        //Í£Ö¹³äµç£¬·µ»ØÏêµ¥,Àë¿ª³äµçÇø
+        //åœæ­¢å……ç”µï¼Œè¿”å›è¯¦å•,ç¦»å¼€å……ç”µåŒº
          int num = CUserID[usrname];
          cData[num]->DeleteCar(cData[num]->ChargingCar);
          CUser.erase(usrname);
@@ -536,7 +543,7 @@ int Server::cancelCharge(string usrname)
          return 0;
      }
     
-     //Èô»¹ÔÚ³äµçÇø´¦ÓÚµÈ´ı×´Ì¬Ôò´ÓµÈºò¶ÓÁĞÖĞÒÆ³ı¡¢É¾³ı³äµçÇëÇó£¬Àë¿ª³äµçÇø
+     //è‹¥è¿˜åœ¨å……ç”µåŒºå¤„äºç­‰å¾…çŠ¶æ€åˆ™ä»ç­‰å€™é˜Ÿåˆ—ä¸­ç§»é™¤ã€åˆ é™¤å……ç”µè¯·æ±‚ï¼Œç¦»å¼€å……ç”µåŒº
      for (int k = 0; k < cData[k]->WaitingCar.size(); k++) {
          if (cData[num]->WaitingCar[k]->usrname == usrname) {
              cData[num]->DeleteCar(cData[num]->WaitingCar[k]);
@@ -546,7 +553,7 @@ int Server::cancelCharge(string usrname)
              break;
          }
      }
-    res = "³äµçÈ¡Ïû³É¹¦£¡\n";
+    res = "å……ç”µå–æ¶ˆæˆåŠŸï¼\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
@@ -554,7 +561,7 @@ int Server::cancelCharge(string usrname)
     return 0;
 }
 
-// cmd:106 »ñÈ¡ÅÅ¶ÓĞÅÏ¢--ok
+// cmd:106 è·å–æ’é˜Ÿä¿¡æ¯--ok
 int Server::getQueueData(string usrname, string& qNum, int& curWait)
 {
     send_info.cmd = GET_QUEUE_DATA;
@@ -565,7 +572,7 @@ int Server::getQueueData(string usrname, string& qNum, int& curWait)
     if (it == queueData.end())
     {
         send_info.Q_NUM = -1;
-        res = "Î´ÕÒµ½ÓÃ»§<" + usrname + ">µÄ³äµçÇëÇó£¡\n";
+        res = "æœªæ‰¾åˆ°ç”¨æˆ·<" + usrname + ">çš„å……ç”µè¯·æ±‚ï¼\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -578,7 +585,7 @@ int Server::getQueueData(string usrname, string& qNum, int& curWait)
     send_info.MODE = (qNum[0] == 'F') ? 1 : 0;
     send_info.Q_NUM = stoi(qNum.substr(1));
     send_info.W_NUM = curWait;
-    res = "ÅÅ¶ÓºÅÂë£º" + qNum + "Ç°³µµÈ´ıÊıÁ¿" + to_string(curWait) + "\n";
+    res = "æ’é˜Ÿå·ç ï¼š" + qNum + "å‰è½¦ç­‰å¾…æ•°é‡" + to_string(curWait) + "\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
@@ -586,7 +593,7 @@ int Server::getQueueData(string usrname, string& qNum, int& curWait)
     return 0;
 }
 
-//³µÁ¾ÅÅ¶ÓºÅÂëÉú³É--ok
+//è½¦è¾†æ’é˜Ÿå·ç ç”Ÿæˆ--ok
 string Server::queueNumGenerate(string usrname, int mode)
 {
     string qNum;
@@ -598,26 +605,26 @@ string Server::queueNumGenerate(string usrname, int mode)
     return qNum;
 }
 
-//»ñÈ¡±¾Ä£Ê½ÏÂ×îĞÂµÄÇ°³µµÈ´ıÊıÁ¿ĞÅÏ¢---ok
+//è·å–æœ¬æ¨¡å¼ä¸‹æœ€æ–°çš„å‰è½¦ç­‰å¾…æ•°é‡ä¿¡æ¯---ok
 int Server::getCurWaitNum(string usrname)
 {
     int num = 0;
     auto ask = this->queueData.find(usrname);
-    int qNum = stoi(ask->second.first.substr(1)); //ÅÅ¶ÓºÅÂë
+    int qNum = stoi(ask->second.first.substr(1)); //æ’é˜Ÿå·ç 
 
-    //Èç¹û³µÁ¾Î»ÓÚµÈºòÇø
+    //å¦‚æœè½¦è¾†ä½äºç­‰å€™åŒº
     CarAsk* w = WUser[usrname];
     if (w)
     {
         if (w->IsFastCharge)
         {
-            //»ñÈ¡µÈºòÇøÄÚÇ°³µµÈ´ıÊıÄ¿
+            //è·å–ç­‰å€™åŒºå†…å‰è½¦ç­‰å¾…æ•°ç›®
             for (auto i = WUser.begin(); i != WUser.end(); i++)
             {
                 if (i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
-            //»ñÈ¡³äµçÇøÄÚÍ¬Ä£Ê½ÏÂËùÓĞµÈ´ıµÄ³µÁ¾ÊıÄ¿
+            //è·å–å……ç”µåŒºå†…åŒæ¨¡å¼ä¸‹æ‰€æœ‰ç­‰å¾…çš„è½¦è¾†æ•°ç›®
             for (int k = 0; k < FAST_NUM; k++) {
                 num += cData[k]->WaitCount;
             }
@@ -625,13 +632,13 @@ int Server::getCurWaitNum(string usrname)
         }
         else
         {
-            //»ñÈ¡µÈºòÇøÄÚÇ°³µµÈ´ıÊıÄ¿
+            //è·å–ç­‰å€™åŒºå†…å‰è½¦ç­‰å¾…æ•°ç›®
             for (auto i = WUser.rbegin(); i != WUser.rend(); i++)
             {
                 if (!i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
-            //»ñÈ¡³äµçÇøÄÚÍ¬Ä£Ê½ÏÂËùÓĞµÈ´ıµÄ³µÁ¾ÊıÄ¿
+            //è·å–å……ç”µåŒºå†…åŒæ¨¡å¼ä¸‹æ‰€æœ‰ç­‰å¾…çš„è½¦è¾†æ•°ç›®
             for (int k = FAST_NUM; k < CHARGEPORT_NUM; k++) {
                 num += cData[k]->WaitCount;
             }
@@ -640,7 +647,7 @@ int Server::getCurWaitNum(string usrname)
         return num;
     }
 
-    //Èç¹û³µÁ¾Î»ÓÚ³äµçÇø
+    //å¦‚æœè½¦è¾†ä½äºå……ç”µåŒº
     CarAsk* c = CUser[usrname];
     if ( c )
     {
@@ -655,12 +662,12 @@ int Server::getCurWaitNum(string usrname)
         return num;
     }
 
-    //¼´½«½øÈëµÈºòÇø
-    cout << "ÓÃ»§" << usrname << "¼È²»ÔÚµÈºòÇø£¬Ò²²»ÔÚ³äµçÇø\n";
+    //å³å°†è¿›å…¥ç­‰å€™åŒº
+    cout << "ç”¨æˆ·" << usrname << "æ—¢ä¸åœ¨ç­‰å€™åŒºï¼Œä¹Ÿä¸åœ¨å……ç”µåŒº\n";
     return -1;
 }
 
-//»ñÈ¡µÈºòÇøÄÚ¼´½«½øÈë³äµçÇøµÄ¿ì³äºÍÂı³äusrname(½ĞºÅ£©
+//è·å–ç­‰å€™åŒºå†…å³å°†è¿›å…¥å……ç”µåŒºçš„å¿«å……å’Œæ…¢å……usrname(å«å·ï¼‰
 int Server::Calling(string& fUser, string& tUser)
 {
     fUser = "";
@@ -683,15 +690,15 @@ int Server::Calling(string& fUser, string& tUser)
     return 0;
 }
 
-//»ñÈ¡³äµçÇøÄÚÅÅ¶Ó¶ÓÁĞÓĞ¿ÕÎ»ÇÒµÈ´ıÊ±¼ä×î¶ÌµÄ³äµç×®--ok
+//è·å–å……ç”µåŒºå†…æ’é˜Ÿé˜Ÿåˆ—æœ‰ç©ºä½ä¸”ç­‰å¾…æ—¶é—´æœ€çŸ­çš„å……ç”µæ¡©--ok
 int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
 {
-    //¼ÇÂ¼Á½ÖÖÄ£Ê½ÏÂ×ÜÊ±¼ä×î¶ÌµÄ³äµç×®¼°ÆäÊ±¼ä
+    //è®°å½•ä¸¤ç§æ¨¡å¼ä¸‹æ€»æ—¶é—´æœ€çŸ­çš„å……ç”µæ¡©åŠå…¶æ—¶é—´
     fTime = tTime = INT32_MAX;
     fSID = tSID = -1;
     for (int i = 0; i < FAST_NUM; i++) {
         if (cData[i]->WaitCount > MAX_WAIT_NUM)
-            continue;//ÎŞ¿ÕÎ»µÄ³äµç×®Ìø¹ı
+            continue;//æ— ç©ºä½çš„å……ç”µæ¡©è·³è¿‡
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
@@ -705,7 +712,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     }
     for (int i = FAST_NUM; i < CHARGEPORT_NUM; i++) {
         if (cData[i]->WaitCount > MAX_WAIT_NUM)
-            continue;//ÎŞ¿ÕÎ»µÄ³äµç×®Ìø¹ı
+            continue;//æ— ç©ºä½çš„å……ç”µæ¡©è·³è¿‡
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
@@ -720,7 +727,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     return 0;
 }
 
-//ÌáÈ¡³äµçÇëÇó
+//æå–å……ç”µè¯·æ±‚
 int Server::resolveRequest(Info& usrInfo, CarAsk* ask)
 {
     if (ask == nullptr) {
@@ -734,19 +741,19 @@ int Server::resolveRequest(Info& usrInfo, CarAsk* ask)
     return 0;
 }
 
-//cmd200: »ñÈ¡³äµç×®×´Ì¬ĞÅÏ¢--ok
+//cmd200: è·å–å……ç”µæ¡©çŠ¶æ€ä¿¡æ¯--ok
 int Server::getChargePortData(string usrname) {
     send_info.cmd = SPY_CHARGEPORT;
     strcpy_s(send_info.UID, usrname.c_str());
-    string res = "<<<<<<<<<<<<<<<<<<<<³äµç×´Ì¬ĞÅÏ¢>>>>>>>>>>>>>>>>>>>>\n";
+    string res = "<<<<<<<<<<<<<<<<<<<<å……ç”µçŠ¶æ€ä¿¡æ¯>>>>>>>>>>>>>>>>>>>>\n";
     for (int i = 0; i < CHARGEPORT_NUM; i++) {
-        res += "³äµç×®±àºÅ£º" + to_string(i) + "\n";
-        res += "ÊÇ·ñÎª¿ì³ä£º" + to_string(cData[i]->IsFastCharge) + "\n";
-        res += "ÊÇ·ñÕı³£¹¤×÷£º" + to_string(1) + "\n";
-        res += "ÊÇ·ñÒÑ¾­Æô¶¯" + to_string(cData[i]->OnState) + "\n";
-        res += "ÏµÍ³Æô¶¯ºóÀÛ¼Æ³äµç´ÎÊı£º" + to_string(cData[i]->ChargeCnt) + "\n";
-        res += "ÏµÍ³Æô¶¯ºóÀÛ¼Æ³äµç×ÜÊ±³¤£º" + to_string(cData[i]->ChargeTime) + "\n";
-        res += "ÏµÍ³Æô¶¯ºóÀÛ¼Æ³äµç×ÜµçÁ¿£º" + to_string(cData[i]->TotalElect) + "\n";
+        res += "å……ç”µæ¡©ç¼–å·ï¼š" + to_string(i) + "\n";
+        res += "æ˜¯å¦ä¸ºå¿«å……ï¼š" + to_string(cData[i]->IsFastCharge) + "\n";
+        res += "æ˜¯å¦æ­£å¸¸å·¥ä½œï¼š" + to_string(1) + "\n";
+        res += "æ˜¯å¦å·²ç»å¯åŠ¨" + to_string(cData[i]->OnState) + "\n";
+        res += "ç³»ç»Ÿå¯åŠ¨åç´¯è®¡å……ç”µæ¬¡æ•°ï¼š" + to_string(cData[i]->ChargeCnt) + "\n";
+        res += "ç³»ç»Ÿå¯åŠ¨åç´¯è®¡å……ç”µæ€»æ—¶é•¿ï¼š" + to_string(cData[i]->ChargeTime) + "\n";
+        res += "ç³»ç»Ÿå¯åŠ¨åç´¯è®¡å……ç”µæ€»ç”µé‡ï¼š" + to_string(cData[i]->TotalElect) + "\n";
         res += "----------------------------------------------------------------------\n";
     }
     send_info.REPLY = 0;
@@ -756,42 +763,42 @@ int Server::getChargePortData(string usrname) {
     return 0;
 }
 
-//cmd201:²é¿´³äµç×®µÈºòµÄ³µÁ¾ĞÅÏ¢
+//cmd201:æŸ¥çœ‹å……ç”µæ¡©ç­‰å€™çš„è½¦è¾†ä¿¡æ¯
 int Server::getCarData(string usrname) {
     send_info.cmd = WAIT_CAR_DATA;
     strcpy_s(send_info.UID, usrname.c_str());
-    string res = "<<<<<<<<<<<<<<<<<<<<³äµç×®µÈºò·şÎñ³µÁ¾ĞÅÏ¢>>>>>>>>>>>>>>>>>>>>\n";
+    string res = "<<<<<<<<<<<<<<<<<<<<å……ç”µæ¡©ç­‰å€™æœåŠ¡è½¦è¾†ä¿¡æ¯>>>>>>>>>>>>>>>>>>>>\n";
     for (int i = 0; i < CHARGEPORT_NUM; i++) {
         res += "----------------------------------------------------------------------\n";
-        res += "³äµç×®±àºÅ£º" + to_string(i) + "\n";
-        res += "ÊÇ·ñÎª¿ì³ä£º" + to_string(cData[i]->IsFastCharge) + "\n";
+        res += "å……ç”µæ¡©ç¼–å·ï¼š" + to_string(i) + "\n";
+        res += "æ˜¯å¦ä¸ºå¿«å……ï¼š" + to_string(cData[i]->IsFastCharge) + "\n";
         for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
-            res+= to_string(j)+" ) ÓÃ»§Ãû: " +cData[i]->WaitingCar[j]->usrname;
-            res+= "\nµç³ØÈİÁ¿£º"+to_string(cData[i]->WaitingCar[j]->BatteryCap);
-            res+= "\nµ±Ç°µç³ØµçÁ¿£º"+to_string( cData[i]->WaitingCar[j]->BatteryNow)+"\n";
-            res += "µÈ´ıÊ±¼ä£º" + to_string(time(NULL) - cData[i]->WaitingCar[j]->Ask->StWaitTime) + "s\n\n";
+            res+= to_string(j)+" ) ç”¨æˆ·å: " +cData[i]->WaitingCar[j]->usrname;
+            res+= "\nç”µæ± å®¹é‡ï¼š"+to_string(cData[i]->WaitingCar[j]->BatteryCap);
+            res+= "\nå½“å‰ç”µæ± ç”µé‡ï¼š"+to_string( cData[i]->WaitingCar[j]->BatteryNow)+"\n";
+            res += "ç­‰å¾…æ—¶é—´ï¼š" + to_string(time(NULL) - cData[i]->WaitingCar[j]->Ask->StWaitTime) + "s\n\n";
         }
         res += "----------------------------------------------------------------------\n\n";
     }
     return 0;
 }
 
-//cmd202: ²é¿´±¨±í--ok
+//cmd202: æŸ¥çœ‹æŠ¥è¡¨--ok
 int Server::getReport(string usrname) {
     send_info.cmd = DATA_STATISTICS;
     strcpy_s(send_info.UID, usrname.c_str());
-    string res = "<<<<<<<<<<<<<<<<<<<<³äµç±¨±í>>>>>>>>>>>>>>>>>>>>\n";
-    res += "µ±Ç°Ê±¼ä£º" + getCurTime(0) + "\n";
+    string res = "<<<<<<<<<<<<<<<<<<<<å……ç”µæŠ¥è¡¨>>>>>>>>>>>>>>>>>>>>\n";
+    res += "å½“å‰æ—¶é—´ï¼š" + getCurTime(0) + "\n";
     for (int i = 0; i < CHARGEPORT_NUM; i++) {
         CPStatusTable report = cData[i]->GetStatus();
-        res += "³äµç×®±àºÅ£º" + to_string(i) + "\n";
-        res += "ÊÇ·ñÎª¿ì³ä£º" + to_string(report.IsFastCharge) + "\n";
-        res += "ÀÛ¼Æ³äµç´ÎÊı£º" + to_string(report.ChargeCnt+report.PastChargeCnt) + "\n";
-        res += "ÀÛ¼Æ³äµçÊ±³¤£º" + to_string(report.ChargeTime+report.PastChargeTime) + "min\n";
-        res += "ÀÛ¼Æ³äµçÁ¿£º" + to_string(report.TotalElect+report.PastTotalElect) + "¶È\n";
-        res += "ÀÛ¼Æ³äµç·ÑÓÃ£º" + to_string(report.ElectCost+report.PastElectCost) + "Ôª\n";
-        res += "ÀÛ¼Æ·şÎñ·ÑÓÃ£º" + to_string(report.ServiceCost+report.PastServiceCost) + "Ôª\n";
-        res += "ÀÛ¼Æ×Ü·ÑÓÃ£º" + to_string(report.ChargeCost+report.PastChargeCost) + "Ôª\n";
+        res += "å……ç”µæ¡©ç¼–å·ï¼š" + to_string(i) + "\n";
+        res += "æ˜¯å¦ä¸ºå¿«å……ï¼š" + to_string(report.IsFastCharge) + "\n";
+        res += "ç´¯è®¡å……ç”µæ¬¡æ•°ï¼š" + to_string(report.ChargeCnt+report.PastChargeCnt) + "\n";
+        res += "ç´¯è®¡å……ç”µæ—¶é•¿ï¼š" + to_string(report.ChargeTime+report.PastChargeTime) + "min\n";
+        res += "ç´¯è®¡å……ç”µé‡ï¼š" + to_string(report.TotalElect+report.PastTotalElect) + "åº¦\n";
+        res += "ç´¯è®¡å……ç”µè´¹ç”¨ï¼š" + to_string(report.ElectCost+report.PastElectCost) + "å…ƒ\n";
+        res += "ç´¯è®¡æœåŠ¡è´¹ç”¨ï¼š" + to_string(report.ServiceCost+report.PastServiceCost) + "å…ƒ\n";
+        res += "ç´¯è®¡æ€»è´¹ç”¨ï¼š" + to_string(report.ChargeCost+report.PastChargeCost) + "å…ƒ\n";
         res += "--------------------------------------------------------------------\n\n";
     }
     strcpy_s(send_info.output, res.c_str());
@@ -801,7 +808,7 @@ int Server::getReport(string usrname) {
     return 0;
 }
 
-//cmd203£º¿ªÆô³äµç×®
+//cmd203ï¼šå¼€å¯å……ç”µæ¡©
 int Server::openCP(string usrname, int SID) {
     usrEntry* uE=nullptr;
     usrFind(usrname, uE);
@@ -809,7 +816,7 @@ int Server::openCP(string usrname, int SID) {
     strcpy_s(send_info.UID, usrname.c_str());
     string res;
     if (cData[SID]->OnState) {
-        res = "Æô¶¯Ê§°Ü£¬³äµç×®ÒÑ¾­¿ªÆô!\n";
+        res = "å¯åŠ¨å¤±è´¥ï¼Œå……ç”µæ¡©å·²ç»å¼€å¯!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -818,14 +825,14 @@ int Server::openCP(string usrname, int SID) {
     }
     if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
         cData[SID]->on();
-        res = "³äµç×®" + to_string(SID) + "Æô¶¯³É¹¦!\n";
+        res = "å……ç”µæ¡©" + to_string(SID) + "å¯åŠ¨æˆåŠŸ!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
         cout << res;
         return 0;
     }
-    res = "³äµç×®" + to_string(SID) + "¿ªÆôÊ§°Ü\n";
+    res = "å……ç”µæ¡©" + to_string(SID) + "å¼€å¯å¤±è´¥\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = -2;
     server_sock.Send(send_info);
@@ -833,7 +840,7 @@ int Server::openCP(string usrname, int SID) {
     return -2;
 }
 
-//cmd204: ¹Ø±Õ³äµç×®
+//cmd204: å…³é—­å……ç”µæ¡©
 int Server::closeCP(string usrname, int SID) {
     usrEntry* uE=nullptr;
     usrFind(usrname, uE);
@@ -841,7 +848,7 @@ int Server::closeCP(string usrname, int SID) {
     strcpy_s(send_info.UID, usrname.c_str());
     string res;
     if (cData[SID]->OnState == false) {
-        res = "¹Ø±ÕÊ§°Ü£¬³äµç×®ÒÑ¾­´¦ÓÚ¹Ø±Õ×´Ì¬!\n";
+        res = "å…³é—­å¤±è´¥ï¼Œå……ç”µæ¡©å·²ç»å¤„äºå…³é—­çŠ¶æ€!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         cout << res;
@@ -850,14 +857,14 @@ int Server::closeCP(string usrname, int SID) {
     }
     if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
         cData[SID]->off();
-        res = "³äµç×®" + to_string(SID) + "¹Ø±Õ³É¹¦!\n";
+        res = "å……ç”µæ¡©" + to_string(SID) + "å…³é—­æˆåŠŸ!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
         cout << res;
         return 0;
     }
-    res = "³äµç×®" + to_string(SID) + "¹Ø±ÕÊ§°Ü\n";
+    res = "å……ç”µæ¡©" + to_string(SID) + "å…³é—­å¤±è´¥\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = -2;
     server_sock.Send(send_info);
@@ -875,28 +882,28 @@ string Server::getCurTime(time_t t) {
 }
 
 
-/*DBupdateÀàÊµÏÖ*/
+/*DBupdateç±»å®ç°*/
 
-//Êı¾İ¿â³õÊ¼»¯
+//æ•°æ®åº“åˆå§‹åŒ–
 DBupdate::DBupdate()
 {
 
-    //¼ÓÔØÓÃ»§ÎÄ¼ş£¬Èô²»´æÔÚÔòÖ±½Ó´´½¨
-    cout << "¼ÓÔØÊı¾İ¿â..." << endl;
+    //åŠ è½½ç”¨æˆ·æ–‡ä»¶ï¼Œè‹¥ä¸å­˜åœ¨åˆ™ç›´æ¥åˆ›å»º
+    cout << "åŠ è½½æ•°æ®åº“..." << endl;
     ifstream uf;
     uf.open(USER_FILENAME, ifstream::out | ifstream::app);
     if (uf.is_open())
     {
         while (!uf.eof())
         {
-            //¶ÁÈ¡ÓÃ»§ÌõÄ¿
+            //è¯»å–ç”¨æˆ·æ¡ç›®
             string line;
             getline(uf, line);
             while (line == "\n" && !uf.eof())
             {
                 getline(uf, line);
             }
-            //ÓÃ»§ÌõÄ¿½âÎö
+            //ç”¨æˆ·æ¡ç›®è§£æ
             usrEntry* uE = new usrEntry();
             if (entryResolve(uE, line) == 0)
             {
@@ -911,21 +918,21 @@ DBupdate::DBupdate()
     uf.close();
 
 
-    //¼ÓÔØÈÕÖ¾ÎÄ¼ş£¬Èô²»´æÔÚÔòÖ±½Ó´´½¨
+    //åŠ è½½æ—¥å¿—æ–‡ä»¶ï¼Œè‹¥ä¸å­˜åœ¨åˆ™ç›´æ¥åˆ›å»º
     ifstream log;
     log.open(LOG_FILENAME, ifstream::out | ifstream::app);
     if (log.is_open())
     {
         while (!log.eof())
         {
-            //¶ÁÈ¡ÈÕÖ¾ÌõÄ¿
+            //è¯»å–æ—¥å¿—æ¡ç›®
             string line;
             getline(log, line);
             while (line == "\n" && !log.eof())
             {
                 getline(log, line);
             }
-            //ÈÕÖ¾ÌõÄ¿½âÎö
+            //æ—¥å¿—æ¡ç›®è§£æ
             logEntry* lE = new logEntry();
             if (entryResolve(lE, line) == 0)
             {
@@ -938,10 +945,10 @@ DBupdate::DBupdate()
         cout << "[FATAL ERROR]: log file " << LOG_FILENAME << " open failure" << endl;
     }
     log.close();
-    cout << "Êı¾İ¿âÍ¬²½Íê±Ï!" << endl;
+    cout << "æ•°æ®åº“åŒæ­¥å®Œæ¯•!" << endl;
 }
 
-//Êı¾İ¿âÌõÄ¿½âÎö(ÓÃ»§ÌõÄ¿)
+//æ•°æ®åº“æ¡ç›®è§£æ(ç”¨æˆ·æ¡ç›®)
 int DBupdate::entryResolve(usrEntry* uE, string line)
 {
     vector<string> temp;
@@ -957,7 +964,7 @@ int DBupdate::entryResolve(usrEntry* uE, string line)
     return 0;
 }
 
-//Êı¾İ¿âÌõÄ¿½âÎö£¨ÈÕÖ¾ÌõÄ¿£©
+//æ•°æ®åº“æ¡ç›®è§£æï¼ˆæ—¥å¿—æ¡ç›®ï¼‰
 int DBupdate::entryResolve(logEntry* lE, string line)
 {
     vector<string> temp;
@@ -976,7 +983,7 @@ int DBupdate::entryResolve(logEntry* lE, string line)
     return 0;
 }
 
-//ĞÂÔöÓÃ»§ĞÅÏ¢
+//æ–°å¢ç”¨æˆ·ä¿¡æ¯
 int DBupdate::addUser(usrEntry* data)
 {
     if (data != nullptr)
@@ -987,7 +994,7 @@ int DBupdate::addUser(usrEntry* data)
     return -1;
 }
 
-//ĞÂÔöÈÕÖ¾ÌõÄ¿
+//æ–°å¢æ—¥å¿—æ¡ç›®
 int DBupdate::addLogEntry(logEntry* data)
 {
     if (data != nullptr)
@@ -998,12 +1005,12 @@ int DBupdate::addLogEntry(logEntry* data)
     return -1;
 }
 
-//¸üĞÂÊı¾İ¿â
+//æ›´æ–°æ•°æ®åº“
 int DBupdate::update()
 {
 
-    //¸üĞÂÓÃ»§ÎÄ¼ş
-    cout << "¸üĞÂÊı¾İ¿â..."  ;
+    //æ›´æ–°ç”¨æˆ·æ–‡ä»¶
+    cout << "æ›´æ–°æ•°æ®åº“..."  ;
     ofstream uf;
     uf.open(USER_FILENAME, ios::trunc | ios::out);
   //  map<string, usrEntry*>::reverse_iterator iter;
@@ -1015,7 +1022,7 @@ int DBupdate::update()
     }
     uf.close();
 
-    ////¸üĞÂ·şÎñÈÕÖ¾
+    ////æ›´æ–°æœåŠ¡æ—¥å¿—
     //ofstream log;
     //log.open(LOG_FILENAME, ios::trunc | ios::out);
     //map<string, vector<logEntry*>>::reverse_iterator it;
@@ -1032,7 +1039,7 @@ int DBupdate::update()
     return 0;
 }
 
-//¹¹ÔìÌõÄ¿(ÓÃ»§ÌõÄ¿)
+//æ„é€ æ¡ç›®(ç”¨æˆ·æ¡ç›®)
 string DBupdate::getEntry(usrEntry* data)
 {
     if (!data)
@@ -1047,7 +1054,7 @@ string DBupdate::getEntry(usrEntry* data)
     return res;
 }
 
-//¹¹ÔìÌõÄ¿£¨ÈÕÖ¾ÌõÄ¿£©
+//æ„é€ æ¡ç›®ï¼ˆæ—¥å¿—æ¡ç›®ï¼‰
 string DBupdate::getEntry(logEntry* data)
 {
     if (!data)
@@ -1064,12 +1071,12 @@ string DBupdate::getEntry(logEntry* data)
     else
         res += " SLOW ";
     res += to_string(data->time);
-    res += "min £¤";
+    res += "min ï¿¥";
     res += to_string(data->cost);
     return res;
 }
 
-//ÒÔ×Ö·ûchÎª·Ö¸ô·û×Ö·û´®²ğ·Ö
+//ä»¥å­—ç¬¦chä¸ºåˆ†éš”ç¬¦å­—ç¬¦ä¸²æ‹†åˆ†
 int split(vector<string>& target, string line, char ch)
 {
     string temp;
