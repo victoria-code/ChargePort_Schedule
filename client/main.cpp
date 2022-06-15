@@ -9,8 +9,8 @@
 using namespace std;
 
 
-mutex mutexUsr;	//ä¿®æ”¹ç”¨æˆ·ä¿¡æ¯æ—¶ç”¨åˆ°çš„äº’æ–¥é”
-mutex mutexSock;	//ä½¿ç”¨client_socketæ—¶çš„äº’æ–¥é”
+mutex mutexUsr;	//ĞŞ¸ÄÓÃ»§ĞÅÏ¢Ê±ÓÃµ½µÄ»¥³âËø
+mutex mutexSock;	//Ê¹ÓÃclient_socketÊ±µÄ»¥³âËø
 struct Info send_info, recv_info;
 
 int main()
@@ -18,29 +18,31 @@ int main()
 	while (1)
 	{
 		cout << "\n**************************************************" << endl;
-		cout << "***************  æ¬¢è¿ä½¿ç”¨å……ç”µæ¡©ç³»ç»Ÿ  *************" << endl;
-		cout << "*****************  1.é€€å‡ºç³»ç»Ÿ  *******************" << endl;
-		cout << "*****************  2.ç”¨æˆ·æ³¨å†Œ  *******************" << endl;
-		cout << "*****************  3.ç”¨æˆ·ç™»å½•  *******************" << endl;
+		cout << "***************  »¶Ó­Ê¹ÓÃ³äµç×®ÏµÍ³  *************" << endl;
+		cout << "*****************  1.ÍË³öÏµÍ³  *******************" << endl;
+		cout << "*****************  2.ÓÃ»§×¢²á  *******************" << endl;
+		cout << "*****************  3.ÓÃ»§µÇÂ¼  *******************" << endl;
 		cout << "**************************************************" << endl;
 
-		cout << "è¯·è¾“å…¥æ‚¨çš„é€‰æ‹©ï¼š";
+		cout << "ÇëÊäÈëÄúµÄÑ¡Ôñ£º";
 		string choice;
 		while (getline(cin, choice), !isLegalChoice(choice, 3))
-			cout << "è¾“å…¥æ— æ•ˆï¼Œè¯·é‡æ–°é€‰æ‹©: ";
+			cout << "ÊäÈëÎŞĞ§£¬ÇëÖØĞÂÑ¡Ôñ: ";
 
 		Client* client = new Client;
 		switch (choice[0] - '0')
 		{
 		case 1:
+			client->close();
 			break;
 		case 2:
 			client->signUp();
+			break;
 		case 3:
 			client->logIN();
 			break;
 		default:
-			cout << "æ— æ•ˆé€‰é¡¹ï¼Œè¯·é‡æ–°è¾“å…¥" << endl;
+			cout << "ÎŞĞ§Ñ¡Ïî£¬ÇëÖØĞÂÊäÈë" << endl;
 			break;
 		}
 

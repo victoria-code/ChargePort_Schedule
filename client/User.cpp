@@ -21,6 +21,7 @@ void Customer::keepRecv()
 			//是否要保存充电详单
 			//更新本地余额信息
 			this->balance = recv_info.BALANCE;
+			this->car->Reply = nullptr;		//REPLY置空 即排队结果
 			break;
 		case CALL: //叫号，客户进入充电区
 			printf("%s", recv_info.output);
@@ -373,12 +374,22 @@ int Customer::newChargeRequest()
 		std::thread sub{ &Customer::keepRecv,&(*tmp) };
 		sub.detach();
 	}
-	else if (suc == -1) {
+	else 
+	{
+		this->car->Reply = nullptr;
+		cout << "提交充电请求失败！" << endl;
+		printf("%s", recv_info.output);
+	}
+	/*if (suc == -1) {
 		cout << "提交充电请求失败，车辆当前位于充电区，无法提交新的充电请求" << endl;
 	}
 	else if (suc == -2) {
 		cout << "提交充电请求失败，当前等候区已满，无法处理新的用户请求，请稍后再试" << endl;
 	}
+	else if (suc == -3) {
+		cout << "提交充电请求失败，系统检测您余额不足，不能进行充电，请充值后再提交充电请求" << endl;
+	}*/
+
 
 	//mutesSock.lock();
 	//mutesUsr.lock();
@@ -409,10 +420,10 @@ int Customer::sendChargeRequest()
 	reply->SID = recv_info.REPLY; //将REPLY复用为充电桩编号
 	reply->num = recv_info.Q_NUM;
 	reply->waitingNum = recv_info.W_NUM;
-	reply->MODE = recv_info.MODE == 1 ? 'F' : 'S';
+	reply->MODE = recv_info.MODE == 1 ? 'F' : 'T';
 
 	char QNum[10]; // F1000
-	QNum[0] = (recv_info.MODE == 1 ? 'F' : 'S');
+	QNum[0] = (recv_info.MODE == 1 ? 'F' : 'T');
 	_itoa_s(reply->num, QNum + 1, 9, 10);
 	reply->queueNum = QNum;
 	this->car->Reply = reply;
@@ -421,7 +432,7 @@ int Customer::sendChargeRequest()
 }
 
 /*
-取消充电
+取消或结束充电
 */
 // int Customer::cancelChargeRequest()
 int Customer::cancelCharge()
@@ -448,6 +459,7 @@ int Customer::cancelCharge()
 		if (suc == 0)
 		{
 			cout << "取消成功！" << endl;
+			printf("%s", recv_info.output);
 			//mutesUsr.lock();
 			this->car->Ask = nullptr;
 			this->car->Reply = nullptr;
@@ -506,14 +518,19 @@ int Customer::sendQueueInfoRequest()
 {
 	send_info.cmd = GET_QUEUE_DATA;
 	strcpy_s(send_info.UID, this->usrname.c_str());
+
 	client_sock.Send(send_info);
+	cout << "Send Succeed" << endl;
 	client_sock.Recv(recv_info);
+	cout << "recvive " << recv_info.UID << endl;
 	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
 
 	//设置排队结果 
-	//此处只设置一项排队号码 因为其余已在申请充电时设置
-	this->car->Reply->num = recv_info.Q_NUM;
+	//此处只设置一项前车等待数量 因为其余已在申请充电时设置
+	this->car->Reply->num = recv_info.W_NUM;
+	cout << "前车等待数量：" << this->car->Reply->num << endl;
+	printf("%s", recv_info.output);
 	return 0;
 }
 
