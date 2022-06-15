@@ -90,9 +90,9 @@ int recvCostTable(Server* server) {
 
 int main() {
     
-    cout << "服务器是否为第一次上线：";
-    int res;
-    cin >> res;
+    //cout << "服务器是否为第一次上线：";
+    int res=0;
+    //cin >> res;
 
     //服务器初始化
     Server server(res);
