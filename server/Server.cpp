@@ -42,13 +42,13 @@ Server::Server(int res) {
             }
         }
         else {
-            cout << "[FATAL ERROR]: history file " << HISTORY << " open failure" << endl;
+            std::cout << "[FATAL ERROR]: history file " << HISTORY << " open failure" << endl;
         }
     }
 
     //初始化排队信息
     FNum = TNum = 0;
-    cout << "服务器初始化完成！" << endl;
+    std::cout << "服务器初始化完成！" << endl;
 }
 
 //服务器下线前同步数据库
@@ -66,7 +66,7 @@ int Server::usrFind(string usrname, usrEntry* res)
     //用户不存在
     if (!res )
     {
-        cout << "[From Database]: 用户"<<usrname<<"不存在！" << endl;
+        std::cout << "[From Database]: 用户"<<usrname<<"不存在！" << endl;
         return -1;
     }
     return 0;
@@ -78,7 +78,7 @@ int Server::logFind(string usrname, vector<logEntry*>& res)
     auto it = database.logData.find(usrname);
     if (it == database.logData.end())
     {
-        cout << "the usr " << usrname << " has no charge log currently." << endl;
+        std::cout << "the usr " << usrname << " has no charge log currently." << endl;
         return -1;
     }
     res.assign(it->second.begin(), it->second.end());
@@ -89,7 +89,7 @@ int Server::logFind(string usrname, vector<logEntry*>& res)
 int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
 {
     if (!uE) {
-        cout << "[fatal error]:uE为空" << endl;
+        std::cout << "[fatal error]:uE为空" << endl;
         return -1;
     }
 
@@ -99,11 +99,11 @@ int Server::usrDataUpdate(bool to_delete, usrEntry* uE)
         //待注销的用户名不存在
         if (database.usrData[uE->usrname] == nullptr)
         {
-            cout << "待注销的账户<" << uE->usrname << ">不存在！" << endl;
+            std::cout << "待注销的账户<" << uE->usrname << ">不存在！" << endl;
             return 0;
         }
         database.usrData.erase(uE->usrname);
-        cout << "账户<" << uE->usrname << ">注销成功！" << endl;
+        std::cout << "账户<" << uE->usrname << ">注销成功！" << endl;
         return 0;
     }
 
@@ -213,12 +213,12 @@ int Server::replyClient(Info usrInfo)
 
         // cmd: 104 充电请求
     case CHARGE_REQUEST: 
-    {
+    {   
         CarAsk* ask = new CarAsk();
-        resolveRequest(usrInfo, ask);
-        if (ask ==nullptr)
-            cout << "null!" << endl;
-        copeChargeRequest(ask);
+    resolveRequest(usrInfo, ask);
+    if (ask == nullptr)
+        std::cout << "null!" << endl;
+    copeChargeRequest(ask);
     }
         break;
 
@@ -257,7 +257,7 @@ int Server::replyClient(Info usrInfo)
     case CLOSE_CHARGEPORT:
         closeCP(Usrname, usrInfo.REPLY);
         break;
-    default:break;
+   // default:break;
     }
    
     return 0;
@@ -268,13 +268,13 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
 {
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = LOG_IN;
-    cout << "登录验证..." << endl;
+    std::cout << "登录验证..." << endl;
     string res;
     //检验用户是否存在
     if (usrFind(usrname, uE) != 0)
     {
         res = "用户名<" + usrname + ">不存在！" + "\n";
-        cout << res << endl;
+        std::cout << res << endl;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
@@ -284,7 +284,7 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
     else if (passwd != uE->passwd)
     {
         res = "用户名和密码不匹配！\n";
-        cout << res;
+        std::cout << res;
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info); 
@@ -294,7 +294,7 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
     else
     {
         res = "登录成功！\n";
-        cout << res;
+        std::cout << res;
         send_info.MODE = 1;
         if (uE->role == "admin")
             send_info.MODE = 2;
@@ -309,7 +309,7 @@ int Server::logIn(string usrname, string passwd, usrEntry* uE)
 // cmd:101 注册认证ok
 int Server::signUp(string usrname, string passwd, string role)
 {
-    cout << "[注册验证] : ";
+    std::cout << "[注册验证] : ";
     strcpy_s(send_info.UID, usrname.c_str());
     send_info.cmd = SIGN_UP;
     string res;
@@ -320,7 +320,7 @@ int Server::signUp(string usrname, string passwd, string role)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -1;
     }
     //用户名已存在
@@ -330,12 +330,12 @@ int Server::signUp(string usrname, string passwd, string role)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -2;
     }
 
     usrEntry* uE = new usrEntry();
-    cout << usrname << " " << "注册成功!" << endl;
+    std::cout << usrname << " " << "注册成功!" << endl;
     uE->usrname = usrname;
     uE->passwd = passwd;
     uE->role = role;
@@ -361,7 +361,7 @@ int Server::balanceChange(string usrname, int amount)
         uE->balance = amount;
         res = "<" + usrname + "充值成功>: ";
         res += "当前余额为" + to_string(uE->balance) + "元!\n";
-        cout << res;
+        std::cout << res;
     }
     //扣费
     if (amount < 0)
@@ -369,7 +369,7 @@ int Server::balanceChange(string usrname, int amount)
         uE->balance += amount;
         res = "<" + usrname + "扣费成功>: ";
         res += "当前余额为" + to_string(uE->balance) + "元!\n";
-        cout << res;
+        std::cout << res;
     }
     return 0;
 }
@@ -382,10 +382,29 @@ int Server::deleteUsr(string usrname)
     send_info.cmd = DELETE_USER;
     strcpy_s(send_info.UID, usrname.c_str());
     string res = "用户<" + usrname + ">注销成功!\n";
+    //等候区注销
+    if (WUser[usrname]) {
+        WUser.erase(usrname);
+        queueData.erase(usrname);
+    }
+
+   //充电区注销
+    else if (CUser[usrname]) {
+        //正在充电则先生成详单
+        int num = CUserID[usrname];
+        if (cData[num]->ChargingCar->usrname == usrname) {
+            cData[num]->DeleteCar(cData[num]->ChargingCar);
+            cout << "等待详单生成..." << endl;
+            Sleep(1000);
+        }
+        CUser.erase(usrname);
+        CUserID.erase(usrname);
+        queueData.erase(usrname);
+    }
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
-    cout << res;
+    std::cout << res;
     return Server::usrDataUpdate(true, uE);
 }
 
@@ -403,7 +422,7 @@ int Server::copeChargeRequest(CarAsk* ask)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -1;
     }
     else
@@ -419,7 +438,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = -2;
                 server_sock.Send(send_info);
-                cout << res;
+                std::cout << res;
                 return -2;
             }
             //否则生成排队号码并记录前车等待数目
@@ -431,7 +450,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                     res = "用户余额不足，请充值后再提交充电请求！\n";
                     strcpy_s(send_info.output, res.c_str());
                     server_sock.Send(send_info);
-                    cout << res;
+                    std::cout << res;
                     return -3;
                 }
 
@@ -445,7 +464,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
-                cout << res;
+                std::cout << res;
                 reqRes[ask->usrname] = true;
                 return 0;
             }
@@ -468,7 +487,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
-                cout << res;
+                std::cout << res;
                 reqRes[ask->usrname] = true;
                 return 0;
             }
@@ -481,7 +500,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
-                cout << res;
+                std::cout << res;
                 reqRes[ask->usrname] = true;
                 return 0;
             }
@@ -504,7 +523,7 @@ int Server::cancelCharge(string usrname)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -1;
     }
 
@@ -517,7 +536,7 @@ int Server::cancelCharge(string usrname)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return 0;
     }
 
@@ -528,7 +547,7 @@ int Server::cancelCharge(string usrname)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -2;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -2;
     }
     
@@ -542,10 +561,12 @@ int Server::cancelCharge(string usrname)
          server_sock.Send(send_info);
 
          cData[num]->DeleteCar(cData[num]->ChargingCar);
+         Sleep(1000);
+         cout << "生成详单..." << endl;
          CUser.erase(usrname);
          queueData.erase(usrname);
          CUserID.erase(usrname);
-         cout << res;
+         std::cout << res;
          return 0;
      }
     
@@ -563,7 +584,7 @@ int Server::cancelCharge(string usrname)
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
-    cout << res;
+    std::cout << res;
     return 0;
 }
 
@@ -582,7 +603,7 @@ int Server::getQueueData(string usrname, string& qNum, int& curWait)
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -1;
     }
     qNum = it->second.first;
@@ -595,7 +616,7 @@ int Server::getQueueData(string usrname, string& qNum, int& curWait)
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
     server_sock.Send(send_info);
-    cout << res;
+    std::cout << res;
     return 0;
 }
 
@@ -669,7 +690,7 @@ int Server::getCurWaitNum(string usrname)
     }
 
     //即将进入等候区
-    cout << "用户" << usrname << "既不在等候区，也不在充电区\n";
+    std::cout << "用户" << usrname << "既不在等候区，也不在充电区\n";
     return -1;
 }
 
@@ -764,7 +785,7 @@ int Server::getChargePortData(string usrname) {
     }
     send_info.REPLY = 0;
     strcpy_s(send_info.output, res.c_str());
-    cout << res << endl;
+    std::cout << res << endl;
     server_sock.Send(send_info);
     return 0;
 }
@@ -808,7 +829,7 @@ int Server::getReport(string usrname) {
         res += "--------------------------------------------------------------------\n\n";
     }
     strcpy_s(send_info.output, res.c_str());
-    cout << res << endl;
+    std::cout << res << endl;
     send_info.REPLY = 0;
     server_sock.Send(send_info);
     return 0;
@@ -826,7 +847,7 @@ int Server::openCP(string usrname, int SID) {
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return -1;
     }
     if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
@@ -835,14 +856,14 @@ int Server::openCP(string usrname, int SID) {
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return 0;
     }
     res = "充电桩" + to_string(SID) + "开启失败\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = -2;
     server_sock.Send(send_info);
-    cout << res;
+    std::cout << res;
     return -2;
 }
 
@@ -857,7 +878,7 @@ int Server::closeCP(string usrname, int SID) {
         res = "关闭失败，充电桩已经处于关闭状态!\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
-        cout << res;
+        std::cout << res;
         server_sock.Send(send_info);
         return -1;
     }
@@ -867,14 +888,14 @@ int Server::closeCP(string usrname, int SID) {
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
-        cout << res;
+        std::cout << res;
         return 0;
     }
     res = "充电桩" + to_string(SID) + "关闭失败\n";
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = -2;
     server_sock.Send(send_info);
-    cout << res;
+    std::cout << res;
     return -2;
 }
 
@@ -895,7 +916,7 @@ DBupdate::DBupdate()
 {
 
     //加载用户文件，若不存在则直接创建
-    cout << "加载数据库..." << endl;
+    std::cout << "加载数据库..." << endl;
     ifstream uf;
     uf.open(USER_FILENAME, ifstream::out | ifstream::app);
     if (uf.is_open())
@@ -919,7 +940,7 @@ DBupdate::DBupdate()
     }
     else
     {
-        cout << "[FATAL ERROR]: user file " << USER_FILENAME << " open failure" << endl;
+        std::cout << "[FATAL ERROR]: user file " << USER_FILENAME << " open failure" << endl;
     }
     uf.close();
 
@@ -948,10 +969,10 @@ DBupdate::DBupdate()
     }
     else
     {
-        cout << "[FATAL ERROR]: log file " << LOG_FILENAME << " open failure" << endl;
+        std::cout << "[FATAL ERROR]: log file " << LOG_FILENAME << " open failure" << endl;
     }
     log.close();
-    cout << "数据库同步完毕!" << endl;
+    std::cout << "数据库同步完毕!" << endl;
 }
 
 //数据库条目解析(用户条目)
@@ -1016,7 +1037,7 @@ int DBupdate::update()
 {
 
     //更新用户文件
-    cout << "更新数据库..."  ;
+    std::cout << "更新数据库..."  ;
     ofstream uf;
     uf.open(USER_FILENAME, ios::trunc | ios::out);
   //  map<string, usrEntry*>::reverse_iterator iter;
@@ -1041,7 +1062,7 @@ int DBupdate::update()
     //    }
     //}
     //uf.close();
-    cout << "done\n";
+    std::cout << "done\n";
     return 0;
 }
 
