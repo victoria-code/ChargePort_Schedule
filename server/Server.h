@@ -1,4 +1,4 @@
-/*·şÎñÆ÷¶ËÊµÏÖ*/
+/*æœåŠ¡å™¨ç«¯å®ç°*/
 #include "ChargePort.h"
 #include "TSocket_server.h"
 #include<algorithm>
@@ -6,71 +6,72 @@
 
 extern TSocket server_sock;
 
-//¼ÇÂ¼ÓÃ»§ĞÅÏ¢ÎÄ¼şÃûºÍÈÕÖ¾ÎÄ¼şÃû£¬¸ÃÎÄ¼şºÍ·şÎñÆ÷¶Ëmain.cppÎ»ÓÚÍ¬Ò»Ä¿Â¼ÏÂ
+//è®°å½•ç”¨æˆ·ä¿¡æ¯æ–‡ä»¶åå’Œæ—¥å¿—æ–‡ä»¶åï¼Œè¯¥æ–‡ä»¶å’ŒæœåŠ¡å™¨ç«¯main.cppä½äºåŒä¸€ç›®å½•ä¸‹
 #define USER_FILENAME "C:\\Users\\Zheng siyang\\Desktop\\user.txt"
 #define LOG_FILENAME   "C:\\Users\\Zheng siyang\\Desktop\\log.txt"
 
-//¼ÇÂ¼³äµç×®ÀúÊ·¼ÇÂ¼ĞÅÏ¢
+//è®°å½•å……ç”µæ¡©å†å²è®°å½•ä¿¡æ¯
 #define HISTORY "C:\\Users\\Zheng siyang\\Desktop\\chargePort.txt"
+#define DETAIL_FILE "C:\\Users\\Zheng siyang\\Desktop\\detail.txt"
 
 #define SERVICE_PRICE 0.8
 #define ELEC_PRICE 1
 
-//³äµç×®ÊıÄ¿
+//å……ç”µæ¡©æ•°ç›®
 #define CHARGEPORT_NUM 5
 
-//ÓÃ»§Êı¾İ¿âÌõÄ¿
+//ç”¨æˆ·æ•°æ®åº“æ¡ç›®
 typedef struct UsrEntry {
     string usrname;
-    string passwd;//ÃÜÂësha1Öµ
-    string role;//customer »ò admin
-    int balance;//Óà¶î
+    string passwd;//å¯†ç sha1å€¼
+    string role;//customer æˆ– admin
+    int balance;//ä½™é¢
     UsrEntry() {};
 }usrEntry;
 
-//ÈÕÖ¾ÌõÄ¿
+//æ—¥å¿—æ¡ç›®
 typedef struct LogEntry {
-    string start_time;//¿ªÊ¼³äµçÊ±¼ä
+    string start_time;//å¼€å§‹å……ç”µæ—¶é—´
     string usrname;
-    int SID;//³äµç×®ID
-    string queueNum;//ÅÅ¶ÓºÅÂë
-    int mode;//³äµçÄ£Ê½
-    int time;//Êµ¼Ê³äµçÊ±¼ä
-    int cost;//½ğ¶î
+    int SID;//å……ç”µæ¡©ID
+    string queueNum;//æ’é˜Ÿå·ç 
+    int mode;//å……ç”µæ¨¡å¼
+    int time;//å®é™…å……ç”µæ—¶é—´
+    int cost;//é‡‘é¢
     LogEntry() {};
 }logEntry;
 
-//Êı¾İ¿â¸üĞÂ
+//æ•°æ®åº“æ›´æ–°
 class DBupdate {
 public:
-    /*Êı¾İ¿â³õÊ¼»¯*/
+    /*æ•°æ®åº“åˆå§‹åŒ–*/
     DBupdate();
 
-    /*Êı¾İ¿âÌõÄ¿½âÎö*/
-    int entryResolve(usrEntry* uE, string line);//ÓÃ»§ÌõÄ¿
-    int entryResolve(logEntry* lE, string line);//ÈÕÖ¾ÌõÄ¿
+    /*æ•°æ®åº“æ¡ç›®è§£æ*/
+    int entryResolve(usrEntry* uE, string line);//ç”¨æˆ·æ¡ç›®
+    int entryResolve(logEntry* lE, string line);//æ—¥å¿—æ¡ç›®
 
-    //Êı¾İ¿âËùÓĞÓÃ»§ĞÅÏ¢
+    //æ•°æ®åº“æ‰€æœ‰ç”¨æˆ·ä¿¡æ¯
     map<string, usrEntry*>usrData;
 
-    //·şÎñÈÕÖ¾
+    //æœåŠ¡æ—¥å¿—
     map<string, vector<logEntry*>>logData;
 
-    //ÀúÊ·¼ÇÂ¼
+    //å†å²è®°å½•
     vector<vector<int>>history;
 
-    /*ÓÃ»§ĞÅÏ¢Î¬»¤*/
-    int addUser(usrEntry* data); //ĞÂÔöÓÃ»§     
+    /*ç”¨æˆ·ä¿¡æ¯ç»´æŠ¤*/
+    int addUser(usrEntry* data); //æ–°å¢ç”¨æˆ·     
 
-    /*³äµçÈÕÖ¾*/
-    int addLogEntry(logEntry* data);//ĞÂÔöÈÕÖ¾ÌõÄ¿
+    /*å……ç”µæ—¥å¿—*/
+    int addLogEntry(logEntry* data);//æ–°å¢æ—¥å¿—æ¡ç›®
 
-    //Êı¾İ¿â¸üĞÂ
+    //æ•°æ®åº“æ›´æ–°
     int update();
 
-    //Êı¾İ¿âÌõÄ¿¹¹Ôì
-    string getEntry(usrEntry* data);//ÓÃ»§ÌõÄ¿
-    string getEntry(logEntry* data);//ÈÕÖ¾ÌõÄ¿
+    //æ•°æ®åº“æ¡ç›®æ„é€ 
+    string getEntry(usrEntry* data);//ç”¨æˆ·æ¡ç›®
+    string getEntry(logEntry* data);//æ—¥å¿—æ¡ç›®
 };
 
 
@@ -78,59 +79,60 @@ public:
 class Server {
 public:
 
-    /*·şÎñÆ÷³õÊ¼»¯¡¢³äµç×®ĞÅÏ¢³õÊ¼»¯*/
+    /*æœåŠ¡å™¨åˆå§‹åŒ–ã€å……ç”µæ¡©ä¿¡æ¯åˆå§‹åŒ–*/
     Server(int res);
 
-    /*·şÎñÆ÷ÏÂÏß*/
+    /*æœåŠ¡å™¨ä¸‹çº¿*/
     ~Server();
-
-    /*·şÎñÆ÷Ëù¿ØÖÆµÄÊı¾İ¿â*/
+    void printStat();
+    /*æœåŠ¡å™¨æ‰€æ§åˆ¶çš„æ•°æ®åº“*/
     DBupdate database;
-    int usrFind(string usrname, usrEntry* res);//ÓÃ»§ĞÅÏ¢²éÑ¯
-    int logFind(string usrname, vector<logEntry*>& res);//ÓÃ»§³äµç¼ÇÂ¼²éÑ¯***
-    int usrDataUpdate(bool to_delete, usrEntry* uE);//ÓÃ»§ĞÅÏ¢¸üĞÂ<ĞÂÔöÓÃ»§£¬ÓÃ»§ĞÅÏ¢¸Ä±ä£¬ÓÃ»§×¢Ïú>
+    int usrFind(string usrname, usrEntry* res);//ç”¨æˆ·ä¿¡æ¯æŸ¥è¯¢
+    int logFind(string usrname, vector<logEntry*>& res);//ç”¨æˆ·å……ç”µè®°å½•æŸ¥è¯¢***
+    int usrDataUpdate(bool to_delete, usrEntry* uE);//ç”¨æˆ·ä¿¡æ¯æ›´æ–°<æ–°å¢ç”¨æˆ·ï¼Œç”¨æˆ·ä¿¡æ¯æ”¹å˜ï¼Œç”¨æˆ·æ³¨é”€>
 
     /*with chargePort*/
-    vector<ChargePort*>cData;//¼ÇÂ¼³äµç×®×´Ì¬ĞÅÏ¢
-    int FNum, TNum;  //µ±Ç°µÈºòÇøÄÚÕıÔÚµÈºòµÄ¿ì³ä/Âı³ä³µÁ¾ÅÅ¶ÓºÅÂë
-    int PID;//³öÏÖ¹ÊÕÏµÄ³äµç×®ID
-    time_t failTime;//³öÏÖ¹ÊÕÏµÄÊ±¼ä
-    void forwardRequet(string usrname, int SID);//Ïò³äµç×®×ª·¢³äµçÇøÄÚ³äµçÇëÇó£¬Ô¤±¸³äµç**
-    void sendDetail(ChargeTablePool* next);//ÏòÓÃ»§·¢ËÍ¶ÔÓ¦µÄ³äµçÏêµ¥²¢½øĞĞ¿Û·Ñ**
+    vector<ChargePort*>cData;//è®°å½•å……ç”µæ¡©çŠ¶æ€ä¿¡æ¯
+    int FNum, TNum;  //å½“å‰ç­‰å€™åŒºå†…æ­£åœ¨ç­‰å€™çš„å¿«å……/æ…¢å……è½¦è¾†æ’é˜Ÿå·ç 
+    int PID;//å‡ºç°æ•…éšœçš„å……ç”µæ¡©ID
+    time_t failTime;//å‡ºç°æ•…éšœçš„æ—¶é—´
+    void forwardRequet(string usrname, int SID);//å‘å……ç”µæ¡©è½¬å‘å……ç”µåŒºå†…å……ç”µè¯·æ±‚ï¼Œé¢„å¤‡å……ç”µ**
+    void sendDetail(ChargeTablePool* next);//å‘ç”¨æˆ·å‘é€å¯¹åº”çš„å……ç”µè¯¦å•å¹¶è¿›è¡Œæ‰£è´¹**
 
-   /*¼ÇÂ¼µ±Ç°ÒÑµÇÂ¼µÄÓÃ»§¼°ÓÃ»§µØÖ·*/
+   /*è®°å½•å½“å‰å·²ç™»å½•çš„ç”¨æˆ·åŠç”¨æˆ·åœ°å€*/
     map<string, string>usrAdress;
 
     /*with client*/
-    map<string, CarAsk*>WUser;    //¼ÇÂ¼³µÁ¾Î»ÓÚµÈºòÇøµÄÓÃ»§¼°ÆäÇëÇó
-    map<string, CarAsk*>CUser;    //¼ÇÂ¼³µÁ¾Î»ÓÚ³äµçÇøµÄÓÃ»§¼°ÆäÇëÇó
-    map<string, pair<string, int>>queueData;//¼ÇÂ¼ÅÅ¶ÓºÅÂëºÍÇ°³µµÈ´ıÊıÁ¿
-    map<string, int>CUserID;//¼ÇÂ¼³äµçÇøÄÚÓÃ»§±»·ÖÅäµÄ³äµç×®±àºÅ
-    map<string, bool>reqRes;//¼ÇÂ¼ÓÃ»§ÇëÇóÊé·ñ±»´¦ÀíÍê±Ï
-    int replyClient(Info usrInfo);//ÏìÓ¦ÓÃ»§¿Í»§¶ËÇëÇó
-    int logIn(string usrname, string passwd, usrEntry* uE);//µÇÂ¼ÑéÖ¤£¬µÇÂ¼³É¹¦Ôò»ñÈ¡ÓÃ»§ĞÅÏ¢
-    int signUp(string usrname, string passwd, string role);//×¢²áÈÏÖ¤
-    int deleteUsr(string usrname);//ÓÃ»§×¢Ïú
+    map<string, CarAsk*>WUser;    //è®°å½•è½¦è¾†ä½äºç­‰å€™åŒºçš„ç”¨æˆ·åŠå…¶è¯·æ±‚
+    map<string, CarAsk*>CUser;    //è®°å½•è½¦è¾†ä½äºå……ç”µåŒºçš„ç”¨æˆ·åŠå…¶è¯·æ±‚
+    map<string, pair<string, int>>queueData;//è®°å½•æ’é˜Ÿå·ç å’Œå‰è½¦ç­‰å¾…æ•°é‡
+    map<string, int>CUserID;//è®°å½•å……ç”µåŒºå†…ç”¨æˆ·è¢«åˆ†é…çš„å……ç”µæ¡©ç¼–å·
+    map<string, bool>reqRes;//è®°å½•ç”¨æˆ·è¯·æ±‚ä¹¦å¦è¢«å¤„ç†å®Œæ¯•
+    map<string, CarAsk*>FUser;//è®°å½•å› å……ç”µæ¡©æ•…éšœè€Œé‡æ–°ç­‰å€™çš„ç”¨æˆ·ï¼Œä¼˜å…ˆå¯¹å…¶è¿›è¡Œè°ƒåº¦
+    int replyClient(Info usrInfo);//å“åº”ç”¨æˆ·å®¢æˆ·ç«¯è¯·æ±‚
+    int logIn(string usrname, string passwd, usrEntry* uE);//ç™»å½•éªŒè¯ï¼Œç™»å½•æˆåŠŸåˆ™è·å–ç”¨æˆ·ä¿¡æ¯
+    int signUp(string usrname, string passwd, string role);//æ³¨å†Œè®¤è¯
+    int deleteUsr(string usrname);//ç”¨æˆ·æ³¨é”€
 
     //CUSTOMER
-    int balanceChange(string usrname, int amount);//³äÖµ¡¢¿Û·Ñ£¨customer)***
-    int copeChargeRequest(CarAsk* ask);//´¦ÀíµÈºòÇøÄÚÓÃ»§µÄ³äµçÇëÇó(customer)***
-    int cancelCharge(string usrname);//´¦ÀíÓÃ»§È¡Ïû³äµçÉêÇë(customer)***
-    int getQueueData(string usrname, string& qNum, int& curWait);//»ñÈ¡ÅÅ¶ÓĞÅÏ¢(customer)***
-    string queueNumGenerate(string usrname, int mode);//³µÁ¾ÅÅ¶ÓºÅÂëÉú³É(customer)
-    int getCurWaitNum(string usrname);//»ñÈ¡×îĞÂµÄÇ°³µµÈ´ıÊıÁ¿ĞÅÏ¢(customer)
-    int Calling(string& fUser, string& tUser);//»ñÈ¡µÈºòÇøÄÚ¼´½«½øÈë³äµçÇøµÄ¿ì³äºÍÂı³äusrname(½ĞºÅ£©(customer)***
-    int getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime);//»ñÈ¡³äµçÇøÄÚÅÅ¶Ó¶ÓÁĞÓĞ¿ÕÎ»ÇÒµÈ´ıÊ±¼ä×î¶ÌµÄ³äµç×®(customer)***
-    int resolveRequest(Info& usrInfo, CarAsk* ask);//ÌáÈ¡³äµçÇëÇó(customer)
+    int balanceChange(string usrname, int amount);//å……å€¼ã€æ‰£è´¹ï¼ˆcustomer)***
+    int copeChargeRequest(CarAsk* ask);//å¤„ç†ç­‰å€™åŒºå†…ç”¨æˆ·çš„å……ç”µè¯·æ±‚(customer)***
+    int cancelCharge(string usrname);//å¤„ç†ç”¨æˆ·å–æ¶ˆå……ç”µç”³è¯·(customer)***
+    int getQueueData(string usrname, string& qNum, int& curWait);//è·å–æ’é˜Ÿä¿¡æ¯(customer)***
+    string queueNumGenerate(string usrname, int mode);//è½¦è¾†æ’é˜Ÿå·ç ç”Ÿæˆ(customer)
+    int getCurWaitNum(string usrname);//è·å–æœ€æ–°çš„å‰è½¦ç­‰å¾…æ•°é‡ä¿¡æ¯(customer)
+    int Calling(string& fUser, string& tUser);//è·å–ç­‰å€™åŒºå†…å³å°†è¿›å…¥å……ç”µåŒºçš„å¿«å……å’Œæ…¢å……usrname(å«å·ï¼‰(customer)***
+    int getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime);//è·å–å……ç”µåŒºå†…æ’é˜Ÿé˜Ÿåˆ—æœ‰ç©ºä½ä¸”ç­‰å¾…æ—¶é—´æœ€çŸ­çš„å……ç”µæ¡©(customer)***
+    int resolveRequest(Info& usrInfo, CarAsk* ask);//æå–å……ç”µè¯·æ±‚(customer)
 
     //ADMIN
-    int openCP(string usrname, int SID);//¿ªÆô³äµç×®
-    int closeCP(string usrname, int SID);//¹Ø±Õ³äµç×®
-    int getChargePortData(string usrname);//»ñÈ¡³äµç×®×´Ì¬ĞÅÏ¢
-    int getReport(string usrname);//»ñÈ¡±¨±í
-    int getCarData(string usrname);//»ñÈ¡µÈºò·şÎñµÄ³µÁ¾ĞÅÏ¢
+    int openCP(string usrname, int SID);//å¼€å¯å……ç”µæ¡©
+    int closeCP(string usrname, int SID);//å…³é—­å……ç”µæ¡©
+    int getChargePortData(string usrname);//è·å–å……ç”µæ¡©çŠ¶æ€ä¿¡æ¯
+    int getReport(string usrname);//è·å–æŠ¥è¡¨
+    int getCarData(string usrname);//è·å–ç­‰å€™æœåŠ¡çš„è½¦è¾†ä¿¡æ¯
 
-    //»ñÈ¡Ê±¼ä
+    //è·å–æ—¶é—´
     string getCurTime(time_t t);
 
 };
@@ -138,5 +140,5 @@ public:
 
 
 
-//ÒÔ×Ö·ûchÎª·Ö¸ô·û×Ö·û´®²ğ·Ö
+//ä»¥å­—ç¬¦chä¸ºåˆ†éš”ç¬¦å­—ç¬¦ä¸²æ‹†åˆ†
 int split(vector<string>& target, string line, char ch);
