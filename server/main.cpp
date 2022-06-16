@@ -2,8 +2,10 @@
 
 struct Info send_info, recv_info;
 std::mutex serverlock;       //服务器操作互斥锁
+std::mutex serverlock2;       //服务器操作互斥锁
+
+bool server_free = false;
 //接收充电桩生成的充电详单并返回给对应的用户
-//监测充电桩空闲状态并进行叫号、调度
 int recvCostTable(Server* server) {
     for (;;)
     {
@@ -18,77 +20,92 @@ int recvCostTable(Server* server) {
                 }
             }
             ChargeTablePool* next = ChargeTableHead->next;
+
             serverlock.lock();
+            cout << "lock2" << endl;
             server->sendDetail(next); //向对应的用户发送充电详单并发起扣费信息
             serverlock.unlock();
+
             delete ChargeTableHead;
             ChargeTableHead = next;
             ChargeTablelock.unlock();
         }
+        if (server_free) {
+            //监测到充电区有空位且等候区对应模式有请求则进行调度
+            string fUser = "", tUser = "";
+            int fID = -1, tID = -1, fTime = INT32_MAX, tTime = INT32_MAX;
 
-        //serverlock.lock();
-        //监测到充电区有空位且等候区对应模式有请求则进行调度
-        string fUser = "", tUser = "";
-        int fID = -1, tID = -1, fTime = INT32_MAX, tTime = INT32_MAX;
-
-        server->getFreeCP(fID, tID, fTime, tTime); //获取不同模式下等待时间最短的充电桩ID
-        if (fID == -1 && tID == -1)
-            continue;
-
-        server->Calling(fUser, tUser);             //获取即将被叫号的用户
-        if (fUser == "" && tUser == "")
-            continue;
-        
-        if (fID != -1&&fUser!="")
-        {
-            string res = "当前可用的快充充电桩：" + to_string(fID) + "\n预计等待时间：" + to_string(fTime) + "s\n";            
-            auto it = server->WUser.find(fUser);
-            if (it == server->WUser.end())
-            {
-                cout << "[fatal Error]: 无法在等候区找到用户" << fUser << endl;
-                return -1;
+            server->getFreeCP(fID, tID, fTime, tTime); //获取不同模式下等待时间最短的充电桩ID
+            if (fID == -1 && tID == -1) {
+                continue;
             }
-            //用户进入充电区
-            server->CUser[fUser] = it->second;
-            server->WUser.erase(it);
-            server->CUserID[fUser] = fID;
-            //叫号，返回给用户充电桩调度结果，用户进入充电区
-            send_info.cmd = CALL;
-            strcpy(send_info.UID, fUser.c_str());
-            send_info.REPLY = fID;
-            res += "请用户<" + fUser + ">进入充电区！充电桩编号为" + to_string(fID) + "\n";
-            cout << res;
-            strcpy(send_info.output, res.c_str());
-            server_sock.Send(send_info);
-            //向充电桩发送请求
-            server->forwardRequet(fUser, fID);
-        }
 
-        if (tID != -1&&tUser!="")
-        {
-            string res = "当前可用的慢充充电桩：" + to_string(tID) + "\n预计等待时间：" + to_string(tTime) + "s\n";
-            auto it = server->WUser.find(tUser);
-            if (it == server->WUser.end())
-            {
-                cout << "[fatal Error]: 无法在等候区找到用户" << tUser << endl;
-                return -1;
+            server->Calling(fUser, tUser);             //获取即将被叫号的用户
+            if (fUser == "" && tUser == "") {
+                continue;
             }
-            //用户进入充电区
-            server->CUser[tUser] = it->second;
-            server->WUser.erase(it);
-            server->CUserID[tUser] = tID;
-            send_info.cmd = CALL;
-            strcpy(send_info.UID, tUser.c_str());
-            send_info.REPLY = tID;
-            res += "请用户<" + tUser + ">进入充电区！充电桩编号为" + to_string(tID) + "\n";
-            cout << res;
-            strcpy(send_info.output, res.c_str());
-            server_sock.Send(send_info);
-            //向充电桩发送请求
-            server->forwardRequet(tUser, tID);
+            cout << "lock3" << endl;
+            if (fID != -1 && fUser != "")
+            {
+                string res = "当前可用的快充充电桩：" + to_string(fID) + "\n预计等待时间：" + to_string(fTime) + "s\n";
+                auto it = server->WUser.find(fUser);
+                if (it == server->WUser.end())
+                {
+                    it = server->FUser.find(fUser);
+                    if (it == server->FUser.end())
+                        cout << "[fatal Error]: 无法在等候区和故障队列中找到用户" << fUser << endl;
+                    return -1;
+                }
+                //用户进入充电区
+                server->CUser[fUser] = it->second;
+                if(server->WUser[it->first])
+                    server->WUser.erase(it);
+                else
+                    server->FUser.erase(it);
+                server->CUserID[fUser] = fID;
+                //叫号，返回给用户充电桩调度结果，用户进入充电区
+                send_info.cmd = CALL;
+                strcpy(send_info.UID, fUser.c_str());
+                send_info.REPLY = fID;
+                res += "请用户<" + fUser + ">进入充电区！充电桩编号为" + to_string(fID) + "\n";
+                cout << res;
+                strcpy(send_info.output, res.c_str());
+                server_sock.Send(send_info);
+                //向充电桩发送请求
+                server->forwardRequet(fUser, fID);
+            }
+
+            if (tID != -1 && tUser != "")
+            {
+                string res = "当前可用的慢充充电桩：" + to_string(tID) + "\n预计等待时间：" + to_string(tTime) + "s\n";
+                auto it = server->WUser.find(tUser);
+                if (it == server->WUser.end())
+                {
+                    it = server->FUser.find(tUser);
+                    if (it == server->FUser.end())
+                        cout << "[fatal Error]: 无法在等候区和故障队列中找到用户" << tUser << endl;
+                    return -1;
+                }
+                //用户进入充电区
+                server->CUser[tUser] = it->second;
+                if (server->WUser[tUser])
+                    server->WUser.erase(it);
+                else
+                    server->FUser.erase(it);
+                server->CUserID[tUser] = tID;
+                send_info.cmd = CALL;
+                strcpy(send_info.UID, tUser.c_str());
+                send_info.REPLY = tID;
+                res += "请用户<" + tUser + ">进入充电区！充电桩编号为" + to_string(tID) + "\n";
+                cout << res;
+                strcpy(send_info.output, res.c_str());
+                server_sock.Send(send_info);
+                //向充电桩发送请求
+                server->forwardRequet(tUser, tID);
+            }
         }
-        //serverlock.unlock();
     }
+
 }
 
 int main() {
@@ -102,7 +119,7 @@ int main() {
 
     BuildChargePortThread();
 
-    //新建线程读取充电桩返回的充电详单并进行调度
+    //新建线程读取充电桩返回的充电详单
     thread withChargePort(recvCostTable, &server);
     withChargePort.detach();
 
@@ -117,8 +134,16 @@ int main() {
             server_sock.Close();
             break;
         }
-        serverlock.lock();
+        server_free = false;
+        for (;;) {
+            cout << "." << endl;
+            if (serverlock.try_lock())
+                break;
+        }
+        cout << "lock1" << endl;
         server.replyClient(recv_info);
+        server.printStat();
+        server_free = true;
         serverlock.unlock();
     }
     return 0;
