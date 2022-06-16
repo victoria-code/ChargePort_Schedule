@@ -61,6 +61,9 @@ public:
 	//消费者登录成功后显示的菜单
 	void showMenu();
 
+	//消费者登出
+	int logOut();
+
 	//充值
 	int recharge();
 	//int sendRechargeRequest(double amount);     //发送充值请求报文

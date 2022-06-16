@@ -1,6 +1,6 @@
 #include "TSocket.h"
 
-//ç”¨æˆ·ç«¯å³client_sock  æœåŠ¡å™¨ç«¯æ”¹ä¸ºsever_sockå³å¯
+//ÓÃ»§¶Ë¼´client_sock  ·şÎñÆ÷¶Ë¸ÄÎªsever_sock¼´¿É
 TSocket client_sock;
 
 
@@ -8,20 +8,20 @@ TSocket::TSocket()
 {
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-	memset(&cli_Addr, 0, sizeof(cli_Addr));  //æ¯ä¸ªå­—èŠ‚éƒ½ç”¨0å¡«å……
+	memset(&cli_Addr, 0, sizeof(cli_Addr));  //Ã¿¸ö×Ö½Ú¶¼ÓÃ0Ìî³ä
 	cli_Addr.sin_family = PF_INET;
 	cli_Addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	cli_Addr.sin_port = htons(1234);
 
-	char bufSend[BUF_SIZE] = { 0 };	// å‘é€ç¼“å†²åŒº
-	char bufRecv[BUF_SIZE] = { 0 };	// æ¥æ”¶ç¼“å†²åŒº
+	char bufSend[BUF_SIZE] = { 0 };	// ·¢ËÍ»º³åÇø
+	char bufRecv[BUF_SIZE] = { 0 };	// ½ÓÊÕ»º³åÇø
 
-	memset(bufSend, 0, BUF_SIZE);  //é‡ç½®ç¼“å†²åŒº
-	memset(bufRecv, 0, BUF_SIZE);  //é‡ç½®ç¼“å†²åŒº
+	memset(bufSend, 0, BUF_SIZE);  //ÖØÖÃ»º³åÇø
+	memset(bufRecv, 0, BUF_SIZE);  //ÖØÖÃ»º³åÇø
 
-	//å»ºç«‹è¿æ¥
+	//½¨Á¢Á¬½Ó
 	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	//è®¾ç½®éé˜»å¡æ¨¡å¼
+	//ÉèÖÃ·Ç×èÈûÄ£Ê½
 	int iMode = 1;
 	int fdFlag = ioctlsocket(sock, FIONBIO, (u_long FAR*)&iMode);
 	if (connect(sock, (SOCKADDR*)&cli_Addr, sizeof(SOCKADDR)) == 1)
@@ -32,18 +32,18 @@ TSocket::TSocket()
 
 void TSocket::Send(struct Info& send_info)
 {
-	// å°†ç»“æ„ä½“ç›´æ¥è½¬å˜æˆå­—ç¬¦ä¸²è¾“å‡º
+	// ½«½á¹¹ÌåÖ±½Ó×ª±ä³É×Ö·û´®Êä³ö
 	send(sock, (char*)&send_info, sizeof(send_info), 0);
 
-	// å‘é€åæ¸…ç©ºç»“æ„ä½“
+	// ·¢ËÍºóÇå¿Õ½á¹¹Ìå
 	memset(&send_info, 0, sizeof(send_info));
 }
 
 
 int TSocket::Recv(struct Info& recv_info)
 {
-	memset(bufRecv, 0, BUF_SIZE);		// æ¸…ç©ºç¼“å†²åŒº
-	memset(&recv_info, 0, sizeof(recv_info));	//æ¸…ç©ºç»“æ„ä½“
+	memset(bufRecv, 0, BUF_SIZE);		// Çå¿Õ»º³åÇø
+	memset(&recv_info, 0, sizeof(recv_info));	//Çå¿Õ½á¹¹Ìå
 
 	int strLen = recv(client_sock.sock, bufRecv, BUF_SIZE, 0);
 	if (strLen == 0)
@@ -51,13 +51,12 @@ int TSocket::Recv(struct Info& recv_info)
 		cout << "Receive from Server Error!" << endl;
 	}
 
-	memcpy(&recv_info, bufRecv, sizeof(recv_info));	//å­—ç¬¦ä¸²å¤åˆ¶åˆ°ç»“æ„ä½“
+	memcpy(&recv_info, bufRecv, sizeof(recv_info));	//×Ö·û´®¸´ÖÆµ½½á¹¹Ìå
 
-	//è¾“å‡ºæ¥æ”¶åˆ°çš„ç»“æ„ä½“
-	//cout << endl << "Info type:" << recv_info.info_type << endl
-	   // << "Name:" << recv_info.name << endl
-	   // << "Password:" << recv_info.password << endl ;
-
+	//Êä³ö½ÓÊÕµ½µÄ½á¹¹Ìå
+	/*cout << endl << "cmd:" << recv_info.cmd << endl
+	    << "UID:" << recv_info.UID << endl;
+*/
 	return strLen;
 }
 
@@ -68,7 +67,7 @@ TSocket::~TSocket()
 }
 
 
-//æ–­å¼€è¿æ¥
+//¶Ï¿ªÁ¬½Ó
 void TSocket::Close()
 {
 	send_info.cmd = CLOSE;

@@ -12,8 +12,6 @@ int Customer::keepRecv()
 {
 	if (client_sock.Recv(recv_info))
 	{
-		//mutexSock.lock();
-		//mutexUsr.lock();
 		switch (recv_info.cmd)
 		{
 		case DETAIL: //充电完成提醒+充电详单+扣费成功提醒
@@ -36,12 +34,49 @@ int Customer::keepRecv()
 			this->balance = recv_info.BALANCE;
 			return 1;
 		default:
-			return 0;;
+			return 0;
 		}
-		//mutexUsr.unlock();
-		//mutexSock.unlock();
 	}
 	return 0;
+}
+
+//消费者登出
+int Customer::logOut()
+{
+	//首先检查是否有充电任务正在进行
+	//通过查询排队结果中的前车等待数量来实现
+	int suc = 0;
+	if (this->car && this->car->Reply)	//用户有车且成功发送充电请求
+	{
+		sendQueueInfoRequest();
+		if (this->car->Reply->num == 0)	//如果正在充电
+		{
+			suc = -1;
+			string choice[] = { "等待结束", "强行停止" };
+			cout << "您有充电任务正在进行，是否等待充电结束? ";
+			printChoice(choice, 2);
+			string id;
+			while (getline(cin, id), !isLegalChoice(id, 2))
+			{
+				cout << "请输入有效选项: ";
+				printChoice(choice, 2);
+			}
+			if (id == "1")
+			{
+				cout << "请等待充电结束后再退出登录" << endl;
+				return 1;	//返回1表示退出登录失败
+			}
+			else
+			{
+				suc = cancelCharge(); //申请结束充电
+			}
+		}
+	}
+
+	if (suc == 0) 
+		this->clearData();
+
+	return suc;
 }
 
 /*
@@ -65,9 +100,9 @@ int User::sendDeleteRequest(string usrname)
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
-	while (strcmp(recv_info.UID, this->usrname.c_str()))
+	while (strcmp(recv_info.UID, usrname.c_str()))
 		client_sock.Recv(recv_info);
-	return recv_info.REPLY;   //test
+	return recv_info.REPLY;  
 }
 
 //--------------------Customer--------------------
@@ -105,7 +140,7 @@ int Customer::deleteAccount()
 			if (id == "1")
 			{
 				cout << "请等待充电结束后再次尝试注销" << endl;
-				return 0;
+				return 1;
 			}
 			else
 			{
@@ -115,10 +150,12 @@ int Customer::deleteAccount()
 	}
 
 	if (suc == 0) //向服务器发送注销申请
+	{
 		suc = sendDeleteRequest(this->usrname);
+	}
 	if (suc == 0)	//Server::usrDataUpdate的返回值只会是0
 	{
-		cout << "注销成功！" << endl;
+		cout << endl << "注销成功！" << endl;
 		this->clearData();
 	}
 	else
@@ -133,7 +170,7 @@ void Customer::showMenu()
 {
 	while (true)
 	{
-		cout << "**************************************************" << endl;
+		cout << "\n**************************************************" << endl;
 		cout << "******************  1.开始充电 *******************" << endl;
 		cout << "******************  2.取消充电 *******************" << endl;
 		cout << "******************  3.排队结果 *******************" << endl;
@@ -191,13 +228,23 @@ void Customer::showMenu()
 		}
 		case 5:
 		{
-			this->clearData();
-			return;
+			if (!this->logOut())
+			{
+				keepRecv();
+				return;
+			}
+			else
+				break;
 		}
 		case 6:
 		{
-			this->deleteAccount();
-			return;
+			if (!this->deleteAccount())
+			{
+				keepRecv();
+				return;
+			}
+			else
+				break;
 		}
 		default:
 			break;
@@ -470,6 +517,13 @@ int Customer::cancelCharge()
 		{
 			cout << "取消成功！" << endl;
 			printf("%s", recv_info.output);
+
+			client_sock.Recv(recv_info);
+			//取消充电后详单打印
+			while (recv_info.cmd != DETAIL)
+				client_sock.Recv(recv_info);
+			printf("%s", recv_info.output);
+
 			this->car->Ask = nullptr;
 			this->car->Reply = nullptr;
 		}
@@ -531,9 +585,9 @@ int Customer::sendQueueInfoRequest()
 	strcpy_s(send_info.UID, this->usrname.c_str());
 
 	client_sock.Send(send_info);
-	cout << "Send Succeed" << endl;
+	//cout << "Send Succeed" << endl;
 	client_sock.Recv(recv_info);
-	cout << "receive " << recv_info.UID << endl;
+	//cout << "receive " << recv_info.UID << endl;
 	while (strcmp(recv_info.UID, this->usrname.c_str()))
 		client_sock.Recv(recv_info);
 

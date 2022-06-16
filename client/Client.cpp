@@ -30,12 +30,17 @@ int Client::logIN()
 			cout << "登录失败，该用户名不存在" << endl;
 		else if (suc == -2)
 			cout << "登录失败，请检查密码是否正确" << endl;
+		
 		return suc;
 	}
 
 	cout << "登录成功！" << endl;
-
-	
+	if (recv_info.MODE == 1)	//Customer
+	{
+		cur_usr = new Customer(usrname, recv_info.MODE, recv_info.BALANCE);
+	}
+	else
+		cur_usr = new Admin();
 	cur_usr->showMenu();
 
 	return suc;
@@ -54,15 +59,15 @@ int Client::sendLogInRequest(string usrname, string password)
 
 	//接收服务器发回的响应报文
 	client_sock.Recv(recv_info);
-	while (strcmp(recv_info.UID, usrname.c_str()))
+	while (strcmp(recv_info.UID, usrname.c_str()) || recv_info.cmd != LOG_IN)
 		client_sock.Recv(recv_info);	//确认是否是发给自己的
 
-	if (recv_info.MODE == 1)	//Customer
-	{
-		cur_usr = new Customer(usrname, recv_info.MODE, recv_info.BALANCE);
-	}
-	else
-		cur_usr = new Admin();
+	//if (recv_info.MODE == 1)	//Customer
+	//{
+	//	cur_usr = new Customer(usrname, recv_info.MODE, recv_info.BALANCE);
+	//}
+	//else
+	//	cur_usr = new Admin();
 
 	return recv_info.REPLY;
 }
@@ -116,7 +121,7 @@ int Client::sendSignUpRequest(string usrname, string password, int type)
 
 	client_sock.Send(send_info);
 	client_sock.Recv(recv_info);
-	while (strcmp(recv_info.UID, usrname.c_str()))
+	while (strcmp(recv_info.UID, usrname.c_str()) || recv_info.cmd != SIGN_UP)
 		client_sock.Recv(recv_info);// 确认是否是发给自己的
 
 	return recv_info.REPLY;
@@ -128,4 +133,17 @@ void Client::close()
 	cout << "欢迎您下次使用！" << endl;
 	system("pause");
 	exit(0);
+}
+
+
+unsigned sha1Fun(const unsigned& B, const unsigned& C, const unsigned& D, const unsigned& t) {
+
+	switch (t / 20) {
+	case 0:     return (B & C) | ((~B) & D);
+	case 2:     return (B & C) | (B & D) | (C & D);
+	case 1:
+	case 3:     return B ^ C ^ D;
+	}
+
+	return t;
 }
