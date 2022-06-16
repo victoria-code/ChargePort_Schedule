@@ -46,6 +46,10 @@ Server::Server(int res) {
         }
     }
 
+    fstream de;
+    de.open(DETAIL_FILE, ios::out | ios::trunc);
+    de.close();
+
     //初始化排队信息
     FNum = TNum = 0;
     std::cout << "服务器初始化完成！" << endl;
@@ -55,6 +59,33 @@ Server::Server(int res) {
 Server::~Server()
 {
     database.update();
+}
+
+//打印充电桩信息
+void Server::printStat() {
+    //充电桩
+    cout << "---";
+    for (int i = 0; i < CHARGEPORT_NUM; i++) 
+        cout << "---" << i << "---";
+    cout << endl;
+
+    for (int i = 0; i < CHARGEPORT_NUM; i++) {
+        if (cData[i]->ChargingCar)
+            cout << cData[i]->ChargingCar->usrname << "\t";
+        else
+            cout << "\t\t";
+    }
+    cout << endl;
+
+    for (int i = 0; i < QUEUE_LENGTH; i++) {
+        for (int j = 0; j < CHARGEPORT_NUM; j++) {
+            if (cData[j]->WaitCount > i)
+                cout << cData[j]->WaitingCar[i]->usrname << "\t";
+            else
+                cout << "       ";
+        }
+        cout << endl;
+    }
 }
 
 /*database Interface*/
@@ -121,7 +152,7 @@ void Server::sendDetail(ChargeTablePool* next)
     send_info.cmd = DETAIL;
     strcpy_s(send_info.UID, next->ChargeTable.usrname.c_str());
 
-    string res = "<<<<<<<<<<<<<<<<<<<<充电详单>>>>>>>>>>>>>>>>>>>>";
+    string res = "------------------------------充电详单------------------------------\n";
     res += "详单编号: " + to_string(next->ChargeTable.ChargeID) + "\n";
     res += "详单生成时间: " + getCurTime(next->ChargeTable.CreateTableTime) + "\n";
     res += "充电桩编号: " + to_string(next->ChargeTable.SID) + "\n";
@@ -138,15 +169,21 @@ void Server::sendDetail(ChargeTablePool* next)
     res += "服务费:" + to_string(next->ChargeTable.ServiceCost) + "\n";
     res += "电费：" + to_string(next->ChargeTable.ElectCost) + "\n";
     res += "总费用:" + to_string(next->ChargeTable.ChargeCost) + "\n";
-    res += "--------------------------------------------------------\n";
+    res += "--------------------------------------------------------------------------\n\n";
+    fstream de;
+    de.open(DETAIL_FILE, ios::out | ios::app);
+    de << res;
+    de.close();
     //扣费
     balanceChange(next->ChargeTable.usrname, -next->ChargeTable.ChargeCost);
     database.update();
     send_info.BALANCE = database.usrData[next->ChargeTable.usrname]->balance;
     res += "<扣费成功>:当前余额：" + to_string(send_info.BALANCE) + "元\n";
+    cout << res << endl;
     CUser.erase(next->ChargeTable.usrname);
     CUserID.erase(next->ChargeTable.usrname);
-    queueData.erase(next->ChargeTable.usrname);
+    if(FUser[next->ChargeTable.usrname]==nullptr)
+        queueData.erase(next->ChargeTable.usrname);
     strcpy_s(send_info.output, res.c_str());
    
     send_info.REPLY = 0;
@@ -395,11 +432,12 @@ int Server::deleteUsr(string usrname)
         if (cData[num]->ChargingCar->usrname == usrname) {
             cData[num]->DeleteCar(cData[num]->ChargingCar);
             cout << "等待详单生成..." << endl;
-            Sleep(1000);
         }
-        CUser.erase(usrname);
-        CUserID.erase(usrname);
-        queueData.erase(usrname);
+        else {
+            CUser.erase(usrname);
+            CUserID.erase(usrname);
+            queueData.erase(usrname);
+        }
     }
     strcpy_s(send_info.output, res.c_str());
     send_info.REPLY = 0;
@@ -463,6 +501,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 res = "请求成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
+                send_info.Q_NUM = stoi(qNum.substr(1));
                 server_sock.Send(send_info);
                 std::cout << res;
                 reqRes[ask->usrname] = true;
@@ -486,6 +525,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 res = "请求修改成功！\n当前排队号码：" + qNum + "\n本模式下前车等待数量： " + to_string(curWait) + "\n";
                 strcpy_s(send_info.output, res.c_str());
                 send_info.REPLY = 0;
+                send_info.Q_NUM = stoi(qNum.substr(1));
                 server_sock.Send(send_info);
                 std::cout << res;
                 reqRes[ask->usrname] = true;
@@ -498,6 +538,7 @@ int Server::copeChargeRequest(CarAsk* ask)
                 WUser[ask->usrname] = ask;
                 res = "请求修改成功！\n当前排队号码：" + queueData[ask->usrname].first + "\n本模式下前车等待数量： " + to_string(queueData[ask->usrname].second) + "\n";
                 strcpy_s(send_info.output, res.c_str());
+                send_info.Q_NUM = stoi(queueData[ask->usrname].first.substr(1));
                 send_info.REPLY = 0;
                 server_sock.Send(send_info);
                 std::cout << res;
@@ -527,11 +568,14 @@ int Server::cancelCharge(string usrname)
         return -1;
     }
 
-    //当前用户在等候区，则删除充电请求，离开等候区
-    if (WUser[usrname])
+    //当前用户在等候区或故障队列，则删除充电请求，离开等候区
+    if (WUser[usrname]||FUser[usrname])
     {
         queueData.erase(usrname);
-        WUser.erase(usrname);
+        if (WUser[usrname])
+            WUser.erase(usrname);
+        else
+            FUser.erase(usrname);
         res = "取消充电成功，充电请求已删除！\n";
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = 0;
@@ -550,33 +594,32 @@ int Server::cancelCharge(string usrname)
         std::cout << res;
         return -2;
     }
-    
+    cout << "num:" << num << endl;
+
     //若正在充电(前车等待数量为0)则提前结束充电 
      if (cData[num]->ChargingCar->usrname==usrname){
         //停止充电，返回详单,离开充电区
          int num = CUserID[usrname];
          res = "充电取消成功，即将生成详单...\n";
+
          strcpy_s(send_info.output, res.c_str());
          send_info.REPLY =0;
          server_sock.Send(send_info);
 
          cData[num]->DeleteCar(cData[num]->ChargingCar);
-         Sleep(1000);
-         cout << "生成详单..." << endl;
          CUser.erase(usrname);
          queueData.erase(usrname);
          CUserID.erase(usrname);
          std::cout << res;
          return 0;
      }
-    
      //若还在充电区处于等待状态则从等候队列中移除、删除充电请求，离开充电区
-     for (int k = 0; k < cData[k]->WaitingCar.size(); k++) {
+     for (int k = 0; k < cData[k]->WaitCount; k++) {
          if (cData[num]->WaitingCar[k]->usrname == usrname) {
-             cData[num]->DeleteCar(cData[num]->WaitingCar[k]);
              CUser.erase(usrname);
              queueData.erase(usrname);
              CUserID.erase(usrname);
+             cData[num]->DeleteCar(cData[num]->WaitingCar[k]);
              break;
          }
      }
@@ -648,7 +691,7 @@ int Server::getCurWaitNum(string usrname)
             //获取等候区内前车等待数目
             for (auto i = WUser.begin(); i != WUser.end(); i++)
             {
-                if (i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
+                if (WUser[i->first]&&i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
             //获取充电区内同模式下所有等待的车辆数目
@@ -680,7 +723,7 @@ int Server::getCurWaitNum(string usrname)
     {
         num = 0;
         int k = CUserID[usrname];
-        for (int j = 0; j < cData[k]->WaitingCar.size(); j++) {
+        for (int j = 0; j < cData[k]->WaitCount; j++) {
             string usr = cData[k]->WaitingCar[j]->usrname;
             int cNum = stoi(queueData[usr].first.substr(1));
             if (cNum < qNum)
@@ -700,10 +743,26 @@ int Server::Calling(string& fUser, string& tUser)
     fUser = "";
     tUser = "";
     int fast = INT32_MAX, slow = INT32_MAX;
+    bool f_ok = false, t_ok = false;
+
+    //从故障队列叫号
+    for (auto i = queueData.begin(); i!=queueData.end(); i++) {
+        int cur = stoi(i->second.first.substr(1));
+        if (FUser[i->first]&&i->second.first[0]=='F'&&cur<fast) {
+            fast = cur;
+            fUser = i->first;
+        }
+        if (FUser[i->first] && i->second.first[0] == 'T' && cur < slow) {
+            slow = cur;
+            tUser = i->first;
+        }
+    }
+
+    //从等候区叫号
     for (auto i = queueData.begin(); i != queueData.end(); i++)
     {
         int cur = stoi(i->second.first.substr(1));
-        if (WUser[i->first]&&reqRes[i->first]&&i->second.first[0] == 'F' && cur< fast)
+        if ((WUser[i->first]&&reqRes[i->first])&&i->second.first[0] == 'F' && cur< fast)
         {
             fast = cur;
             fUser = i->first;
@@ -724,10 +783,10 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     fTime = tTime = INT32_MAX;
     fSID = tSID = -1;
     for (int i = 0; i < FAST_NUM; i++) {
-        if (cData[i]->WaitCount > MAX_WAIT_NUM)
-            continue;//无空位的充电桩跳过
+        if (cData[i]->WaitCount > MAX_WAIT_NUM||cData[i]->OnState==false)
+            continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
-        for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
+        for (int j = 0; j < cData[i]->WaitCount; j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
              cur+= (CUser[usr]->ChargeCap / FAST_POWER) * 60;
         }
@@ -738,10 +797,10 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
         }
     }
     for (int i = FAST_NUM; i < CHARGEPORT_NUM; i++) {
-        if (cData[i]->WaitCount > MAX_WAIT_NUM)
-            continue;//无空位的充电桩跳过
+        if (cData[i]->WaitCount > MAX_WAIT_NUM|| cData[i]->OnState == false)
+            continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
-        for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
+        for (int j = 0; j < cData[i]->WaitCount; j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
             cur += (CUser[usr]->ChargeCap / SLOW_POWER) * 60;
         }
@@ -799,7 +858,7 @@ int Server::getCarData(string usrname) {
         res += "----------------------------------------------------------------------\n";
         res += "充电桩编号：" + to_string(i) + "\n";
         res += "是否为快充：" + to_string(cData[i]->IsFastCharge) + "\n";
-        for (int j = 0; j < cData[i]->WaitingCar.size(); j++) {
+        for (int j = 0; j < cData[i]->WaitCount; j++) {
             res+= to_string(j)+" ) 用户名: " +cData[i]->WaitingCar[j]->usrname;
             res+= "\n电池容量："+to_string(cData[i]->WaitingCar[j]->BatteryCap);
             res+= "\n当前电池电量："+to_string( cData[i]->WaitingCar[j]->BatteryNow)+"\n";
@@ -888,6 +947,27 @@ int Server::closeCP(string usrname, int SID) {
         strcpy_s(send_info.output, res.c_str());
         send_info.REPLY = -1;
         server_sock.Send(send_info);
+        //将正在等待的车移入故障队列
+        for (int i = 0; i < cData[SID]->WaitCount; i++) {
+            string cur_usr = cData[SID]->WaitingCar[i]->usrname;
+            CarAsk* ask = CUser[cur_usr];
+            FUser[cur_usr] = ask;
+            CUser.erase(cur_usr);
+            CUserID.erase(cur_usr);
+            cData[SID]->DeleteCar(cData[SID]->WaitingCar[i]);
+        }
+        //将正在充电的车移入故障队列
+        if (cData[SID]->ChargingCar) {
+            CarAsk* ask = new CarAsk();
+            string cur_usr = cData[SID]->ChargingCar->usrname;
+            ask->usrname = cur_usr;
+            ask->BatteryCap = cData[SID]->ChargingCar->BatteryCap;
+            ask->BatteryNow = cData[SID]->ChargingCar->BatteryNow;
+            ask->ChargeCap = cData[SID]->CurElectReq;
+            ask->IsFastCharge = cData[SID]->ChargingCar->Ask->IsFastCharge;
+            FUser[usrname] = ask;
+            cData[SID]->DeleteCar(cData[SID]->ChargingCar);
+        }
         std::cout << res;
         return 0;
     }
