@@ -50,7 +50,7 @@ extern std::mutex serverlock;       //服务器操作互斥锁
 #define CLOSE_CHARGEPORT 204//关闭充电桩
 
 //socket连接用的请求编号
-#define CLOSE 300 //断开连接
+#define CLOSE 88 //断开连接
 
 using namespace std;
 
