@@ -1,56 +1,58 @@
 #include "ChargePort.h"
 
-const double HIGH_ELEC_PRICE = 1.0;   // ·åµç¼Û£¬µ¥Î»Ôª/¶È
-const double LOW_ELEC_PRICE = 0.4;    // ¹Èµç¼Û£¬µ¥Î»Ôª/¶È
-const double NORMAL_ELEC_PRICE = 0.7; // Æ½µç¼Û£¬µ¥Î»Ôª/¶È
-const double SERVICE_PRICE = 0.8;     // ·şÎñ¼Û£¬µ¥Î»Ôª/¶È
-const double FAST_CHARGE_RATE = 30;   // ¿ì³ä¹¦ÂÊ£¬µ¥Î»¶È/Ğ¡Ê±
-const double SLOW_CHARGE_RATE = 7;    // Âı³ä¹¦ÂÊ£¬µ¥Î»¶È/Ğ¡Ê±
+const double HIGH_ELEC_PRICE = 1.0;   // å³°ç”µä»·ï¼Œå•ä½å…ƒ/åº¦
+const double LOW_ELEC_PRICE = 0.4;    // è°·ç”µä»·ï¼Œå•ä½å…ƒ/åº¦
+const double NORMAL_ELEC_PRICE = 0.7; // å¹³ç”µä»·ï¼Œå•ä½å…ƒ/åº¦
+const double SERVICE_PRICE = 0.8;     // æœåŠ¡ä»·ï¼Œå•ä½å…ƒ/åº¦
+const double FAST_CHARGE_RATE = 30;   // å¿«å……åŠŸç‡ï¼Œå•ä½åº¦/å°æ—¶
+const double SLOW_CHARGE_RATE = 10;    // æ…¢å……åŠŸç‡ï¼Œå•ä½åº¦/å°æ—¶
 
-CPStatusTable NULLStatusTable; // ¿Õ×´Ì¬±í
-CarReply NULLCarReply;         // ¿Õ³äµçÇëÇó
-ChargeThreadPool* ChargeHead;  // ¿ªÊ¼³äµçÇëÇó¶ÓÁĞÍ·
-ChargeThreadPool* ChargeTail;  // ¿ªÊ¼³äµçÇëÇó¶ÓÁĞÎ²
-int ChargeTableID = 0;         // ÓÃÀ´Éú³É³äµçÏêµ¥ID
-// StopThreadPool *StopHead;      // ½áÊø³äµçÇëÇó³Ø¶ÓÁĞÍ·
-// StopThreadPool *StopTail;      // ½áÊø³äµçÇëÇó³Ø¶ÓÁĞÎ²
+CPStatusTable NULLStatusTable; // ç©ºçŠ¶æ€è¡¨
+CarReply NULLCarReply;         // ç©ºå……ç”µè¯·æ±‚
+ChargeThreadPool* ChargeHead;  // å¼€å§‹å……ç”µè¯·æ±‚é˜Ÿåˆ—å¤´
+ChargeThreadPool* ChargeTail;  // å¼€å§‹å……ç”µè¯·æ±‚é˜Ÿåˆ—å°¾
+int ChargeTableID = 0;         // ç”¨æ¥ç”Ÿæˆå……ç”µè¯¦å•ID
+// StopThreadPool *StopHead;      // ç»“æŸå……ç”µè¯·æ±‚æ± é˜Ÿåˆ—å¤´
+// StopThreadPool *StopTail;      // ç»“æŸå……ç”µè¯·æ±‚æ± é˜Ÿåˆ—å°¾
 
-ChargeTablePool* ChargeTableHead; // »Ø¸´³äµçÏêµ¥ÇëÇó¶ÓÁĞÍ·
-ChargeTablePool* ChargeTableTail; // »Ø¸´³äµçÏêµ¥ÇëÇó¶ÓÁĞÎ²
+ChargeTablePool* ChargeTableHead; // å›å¤å……ç”µè¯¦å•è¯·æ±‚é˜Ÿåˆ—å¤´
+ChargeTablePool* ChargeTableTail; // å›å¤å……ç”µè¯¦å•è¯·æ±‚é˜Ÿåˆ—å°¾
 
-std::mutex Chargelock;      // Ìí¼Ó³äµç¹ı³Ìµ½Ïß³Ì³ØµÄ»¥³âËø
-std::mutex ChargeTablelock; // Ìí¼Ó³äµçÏêµ¥µ½ÇëÇó³ØµÄ»¥³âËø
+std::mutex Chargelock;      // æ·»åŠ å……ç”µè¿‡ç¨‹åˆ°çº¿ç¨‹æ± çš„äº’æ–¥é”
+std::mutex ChargeTablelock; // æ·»åŠ å……ç”µè¯¦å•åˆ°è¯·æ±‚æ± çš„äº’æ–¥é”
 
 int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double ElectReq)
 {
     ++ChargePortPtr->ChargeCnt;
-    double ElectNow = 0;            // µ±Ç°³äµçÁ¿
-    double ServicePrice = 0;        // µ±Ç°·şÎñ¼Û
-    double ElectPrice = 0;          // µ±Ç°×Üµç¼Û
-    time_t start_time = time(NULL); // ÆğÊ¼Ê±¼ä
+    double ElectNow = 0;            // å½“å‰å……ç”µé‡
+    double ServicePrice = 0;        // å½“å‰æœåŠ¡ä»·
+    double ElectPrice = 0;          // å½“å‰æ€»ç”µä»·
+    time_t start_time = time(NULL); // èµ·å§‹æ—¶é—´
     RepPtr->StChargeTime = start_time;
-    time_t time_now = start_time;       // µ±Ç°Ê±¼ä
-    double unitrate = SLOW_CHARGE_RATE; // ³äµçËÙÂÊ
+    time_t time_now = start_time;       // å½“å‰æ—¶é—´
+    double unitrate = SLOW_CHARGE_RATE; // å……ç”µé€Ÿç‡
 
-    double start_ChargeCost = ChargePortPtr->ChargeCost;   // ±£Áô³äµç×®Ô­Êı¾İ
-    double start_ChargeTime = ChargePortPtr->ChargeTime;   // ±£Áô³äµç×®Ô­Êı¾İ
-    double start_TotalElect = ChargePortPtr->TotalElect;   // ±£Áô³äµç×®Ô­Êı¾İ
-    double start_ServiceCost = ChargePortPtr->ServiceCost; // ±£Áô³äµç×®Ô­Êı¾İ
-    double start_ElectCost = ChargePortPtr->ElectCost;     // ±£Áô³äµç×®Ô­Êı¾İ
-    double start_BatteryNow = CarPtr->BatteryNow;          // ±£ÁôÆû³µÔ­Êı¾İ
+    double start_ChargeCost = ChargePortPtr->ChargeCost;   // ä¿ç•™å……ç”µæ¡©åŸæ•°æ®
+    double start_ChargeTime = ChargePortPtr->ChargeTime;   // ä¿ç•™å……ç”µæ¡©åŸæ•°æ®
+    double start_TotalElect = ChargePortPtr->TotalElect;   // ä¿ç•™å……ç”µæ¡©åŸæ•°æ®
+    double start_ServiceCost = ChargePortPtr->ServiceCost; // ä¿ç•™å……ç”µæ¡©åŸæ•°æ®
+    double start_ElectCost = ChargePortPtr->ElectCost;     // ä¿ç•™å……ç”µæ¡©åŸæ•°æ®
+    double start_BatteryNow = CarPtr->BatteryNow;          // ä¿ç•™æ±½è½¦åŸæ•°æ®
 
     if (ChargePortPtr->IsFastCharge)
         unitrate = FAST_CHARGE_RATE;
+
+    std::cout << "ç”¨æˆ·" << RepPtr->Ask.usrname << "æ­£åœ¨å……ç”µä¸­ã€‚ã€‚" << std::endl;
 
     while (ElectNow < ElectReq &&
         CarPtr->BatteryNow != CarPtr->BatteryCap &&
         !ChargePortPtr->stopCharging)
     {
-        // Sleep(3); // Ã¿3Ãë½øĞĞÒ»´ÎÊı¾İ¸üĞÂ¡£
-        //Sleep(3000); // Ã¿3Ãë½øĞĞÒ»´ÎÊı¾İ¸üĞÂ¡£
+        // Sleep(3); // æ¯3ç§’è¿›è¡Œä¸€æ¬¡æ•°æ®æ›´æ–°ã€‚
+        //Sleep(3000); // æ¯3ç§’è¿›è¡Œä¸€æ¬¡æ•°æ®æ›´æ–°ã€‚
         time_now = time(NULL);
         int time = time_now - start_time;
-        // ÕâÀïµÄÊ±¼ä¼ÆËã¼ÓËÙÁË£¬¿ÉÒÔºóÆÚµ÷Õû£¬Ã¿1s×÷Îª1min¼ÆËã¡£
+        // è¿™é‡Œçš„æ—¶é—´è®¡ç®—åŠ é€Ÿäº†ï¼Œå¯ä»¥åæœŸè°ƒæ•´ï¼Œæ¯1sä½œä¸º1minè®¡ç®—ã€‚
         ElectNow = unitrate * time / 60;
         ElectPrice = HIGH_ELEC_PRICE * ElectNow;
         ServicePrice = SERVICE_PRICE * ElectNow;
@@ -71,11 +73,11 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
         }
     }
 
-    // ¸üĞÂÒ»ÕÅ³äµç±í
+    // æ›´æ–°ä¸€å¼ å……ç”µè¡¨
     CostTable costtable{ ++ChargeTableID,
                         time(NULL),
                         ChargePortPtr->SID,
-                        ChargePortPtr->IsFastCharge, // ³äµçÄ£Ê½
+                        ChargePortPtr->IsFastCharge, // å……ç”µæ¨¡å¼
                         CarPtr->usrname,
                         start_time,
                         time_now,
@@ -98,13 +100,13 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
     ChargeTableTail->isAvailable = true;
     ChargeTableTail = nextct;
     ChargeTablelock.unlock();
-    // Èô´æÔÚStopChargingÔòÖ±½Ó½áÊø£¬deleteCar¸ºÔğµ÷¶ÈwaitingºÍcharging
+    // è‹¥å­˜åœ¨StopChargingåˆ™ç›´æ¥ç»“æŸï¼ŒdeleteCarè´Ÿè´£è°ƒåº¦waitingå’Œcharging
     if (ChargePortPtr->stopCharging)
     {
         ChargePortPtr->stopCharging = false;
         return 0;
     }
-    //°ÑÏÂÒ»¸öwaiting·ÅÈëcharging
+    //æŠŠä¸‹ä¸€ä¸ªwaitingæ”¾å…¥charging
     for (;;)
     {
         if (ChargePortPtr->CPlock.try_lock())
@@ -118,7 +120,7 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
     {
         ChargePortPtr->IsCharging = false;
     }
-    ChargePortPtr->CPlock.try_lock();
+    ChargePortPtr->CPlock.unlock();
     return 0;
 }
 void ChargeThread()
@@ -137,9 +139,9 @@ void ChargeThread()
             ChargeThreadPool* next = ChargeHead->next;
             delete ChargeHead;
 
-            // ´ÓÏß³Ì³ØÀïÈ¡³ö²¢´´ÔìÒ»¸ö³äµçÏß³Ì
+            // ä»çº¿ç¨‹æ± é‡Œå–å‡ºå¹¶åˆ›é€ ä¸€ä¸ªå……ç”µçº¿ç¨‹
             std::thread CP(ChargeProc, next->ChargePortPtr, next->CarPtr, next->RepPtr, next->ElectReq);
-            CP.detach(); // ½«¸ÃÏß³Ì·ÖÀë³öÈ¥£¬²»×èÈû£¬Ïß³ÌÔËĞĞÍê½áÊø£¬server¹Ø±ÕÊ±¸ÃÏß³ÌÒ²»á½áÊø
+            CP.detach(); // å°†è¯¥çº¿ç¨‹åˆ†ç¦»å‡ºå»ï¼Œä¸é˜»å¡ï¼Œçº¿ç¨‹è¿è¡Œå®Œç»“æŸï¼Œserverå…³é—­æ—¶è¯¥çº¿ç¨‹ä¹Ÿä¼šç»“æŸ
 
             ChargeHead = next;
             Chargelock.unlock();
@@ -148,8 +150,8 @@ void ChargeThread()
 }
 void BuildChargePortThread()
 {
-    // ²»½ö½øĞĞÄ£Äâ³äµçµÄÏß³Ì´¦Àí£¬Ò»Ğ©³õÊ¼»¯Ò²ÔÚÕâÀïÍê³É
-    // ³õÊ¼»¯Ò»¸ö¿ÕµÄ³äµç×®×´Ì¬±í
+    // ä¸ä»…è¿›è¡Œæ¨¡æ‹Ÿå……ç”µçš„çº¿ç¨‹å¤„ç†ï¼Œä¸€äº›åˆå§‹åŒ–ä¹Ÿåœ¨è¿™é‡Œå®Œæˆ
+    // åˆå§‹åŒ–ä¸€ä¸ªç©ºçš„å……ç”µæ¡©çŠ¶æ€è¡¨
     NULLStatusTable.SID = NULLStatusTable.ChargeCnt = 0;
     NULLStatusTable.OnState = NULLStatusTable.IsCharging = false;
     NULLStatusTable.WaitCount = 0;
@@ -158,7 +160,7 @@ void BuildChargePortThread()
     NULLStatusTable.ChargeCost = NULLStatusTable.ChargeTime = 0;
     NULLStatusTable.TotalElect = NULLStatusTable.ServiceCost = NULLStatusTable.ElectCost = 0;
     NULLStatusTable.TableTime = time(NULL);
-    // ³õÊ¼»¯Ò»¸ö¿ÕµÄÆû³µ³äµçÇëÇó»ØÓ¦
+    // åˆå§‹åŒ–ä¸€ä¸ªç©ºçš„æ±½è½¦å……ç”µè¯·æ±‚å›åº”
     NULLCarReply.Ask.usrname = "";
     NULLCarReply.Ask.ChargeCap = 0;
     NULLCarReply.Ask.IsFastCharge = false;
@@ -174,8 +176,8 @@ void BuildChargePortThread()
     ChargeTail = ChargeHead;
     ChargeHead->isAvailable = false;
 
-    std::thread Cth(ChargeThread); // ´¦Àí³äµçµÄÏß³Ì
-    Cth.detach();                  // ½«¸ÃÏß³Ì·ÖÀë³öÈ¥£¬server¹Ø±ÕÊ±¸ÃÏß³ÌÍ¬Ê±½áÊø
+    std::thread Cth(ChargeThread); // å¤„ç†å……ç”µçš„çº¿ç¨‹
+    Cth.detach();                  // å°†è¯¥çº¿ç¨‹åˆ†ç¦»å‡ºå»ï¼Œserverå…³é—­æ—¶è¯¥çº¿ç¨‹åŒæ—¶ç»“æŸ
     /*
         StopHead = new StopThreadPool;
         StopTail = StopHead;
@@ -234,7 +236,7 @@ bool ChargePort::off()
             break;
         }
     }
-    if (IsCharging || WaitCount != 0) // ÓĞ³µÔÚ³äµçÇøÊ±Ê§°Ü
+    if (IsCharging || WaitCount != 0) // æœ‰è½¦åœ¨å……ç”µåŒºæ—¶å¤±è´¥
     {
         return 0;
     }
@@ -245,19 +247,19 @@ bool ChargePort::off()
 CPStatusTable ChargePort::GetStatus()
 {
     CPStatusTable a = NULLStatusTable;
-    a.SID = SID;                   // ³äµç×®±àºÅ
-    a.IsFastCharge = IsFastCharge; // ¿ì³ä»¹ÊÇÂı³ä£¬¿ì³äÎª1,Âı³äÎª0
-    a.OnState = OnState;           // ¿ª¹Ø×´Ì¬£¬true¿ªfalse¹Ø
-    a.IsCharging = IsCharging;     // Îª true Ôò³äµçÇøÓĞ³µ
-    a.WaitNum = WaitNum;           // µÈ´ıÇø³µÁ¾ÉÏÏŞ
-    a.WaitCount = WaitCount;       // µÈ´ıÇøµ±Ç°³µÁ¾Êı
-    a.ChargeCnt = ChargeCnt;       // ÀÛ¼Æ³äµç´ÎÊı
-    a.ChargeCost = ChargeCost;     // ÀÛ¼Æ×Ü·ÑÓÃ¡£µ¥Î»/Ôª
-    a.ChargeTime = ChargeTime;     // ÀÛ¼Æ³äµçÊ±³¤¡£µ¥Î»/min
-    a.TotalElect = TotalElect;     // ÀÛ¼Æ×Ü³äµçÁ¿¡£µ¥Î»/¶È
-    a.ServiceCost = ServiceCost;   // ÀÛ¼Æ·şÎñ·ÑÓÃ¡£µ¥Î»/Ôª
-    a.ElectCost = ElectCost;       // ÀÛ¼Æ³äµç·ÑÓÃ¡£µ¥Î»/Ôª
-    a.TableTime = time(NULL);      // ×´Ì¬ĞÅÏ¢Éú³ÉÊ±¼ä
+    a.SID = SID;                   // å……ç”µæ¡©ç¼–å·
+    a.IsFastCharge = IsFastCharge; // å¿«å……è¿˜æ˜¯æ…¢å……ï¼Œå¿«å……ä¸º1,æ…¢å……ä¸º0
+    a.OnState = OnState;           // å¼€å…³çŠ¶æ€ï¼Œtrueå¼€falseå…³
+    a.IsCharging = IsCharging;     // ä¸º true åˆ™å……ç”µåŒºæœ‰è½¦
+    a.WaitNum = WaitNum;           // ç­‰å¾…åŒºè½¦è¾†ä¸Šé™
+    a.WaitCount = WaitCount;       // ç­‰å¾…åŒºå½“å‰è½¦è¾†æ•°
+    a.ChargeCnt = ChargeCnt;       // ç´¯è®¡å……ç”µæ¬¡æ•°
+    a.ChargeCost = ChargeCost;     // ç´¯è®¡æ€»è´¹ç”¨ã€‚å•ä½/å…ƒ
+    a.ChargeTime = ChargeTime;     // ç´¯è®¡å……ç”µæ—¶é•¿ã€‚å•ä½/min
+    a.TotalElect = TotalElect;     // ç´¯è®¡æ€»å……ç”µé‡ã€‚å•ä½/åº¦
+    a.ServiceCost = ServiceCost;   // ç´¯è®¡æœåŠ¡è´¹ç”¨ã€‚å•ä½/å…ƒ
+    a.ElectCost = ElectCost;       // ç´¯è®¡å……ç”µè´¹ç”¨ã€‚å•ä½/å…ƒ
+    a.TableTime = time(NULL);      // çŠ¶æ€ä¿¡æ¯ç”Ÿæˆæ—¶é—´
     return a;
 }
 CarReply ChargePort::GetChargingCar()
@@ -280,8 +282,10 @@ CarReply ChargePort::GetChargingCar()
 }
 bool ChargePort::AddCar(CarReply myreply, Car* mycar)
 {
+    std::cout << "addCar here" << std::endl;
     for (;;)
     {
+        std::cout << mycar->usrname << "asking....\n";
         if (CPlock.try_lock())
         {
             break;
@@ -306,9 +310,10 @@ bool ChargePort::AddCar(CarReply myreply, Car* mycar)
         ChargingCar = mycar;
         ChargingCarReply = myreply;
 
-        //½«Ò»¸öĞÂµÄ³äµç¹ı³Ì·Åµ½³äµçÏß³Ì³Ø¡£
+        //å°†ä¸€ä¸ªæ–°çš„å……ç”µè¿‡ç¨‹æ”¾åˆ°å……ç”µçº¿ç¨‹æ± ã€‚
         for (;;)
         {
+           
             if (Chargelock.try_lock())
             {
                 break;
@@ -325,6 +330,7 @@ bool ChargePort::AddCar(CarReply myreply, Car* mycar)
         ChargeTail = nextth;
         Chargelock.unlock();
     }
+    std::cout << mycar->usrname << "add car ...done" << std::endl;
     CPlock.unlock();
     return true;
 }
@@ -366,12 +372,12 @@ bool ChargePort::DeleteCar(Car* mycar)
         ChargingCar = NULL;
         ChargingCarReply = NULLCarReply;
         stopCharging = true;
-        for (;;) //µÈ´ıstopCharging±êÖ¾±»ĞŞ¸Ä£¬´æÔÚµÄcharging½áÊø
+        for (;;) //ç­‰å¾…stopChargingæ ‡å¿—è¢«ä¿®æ”¹ï¼Œå­˜åœ¨çš„chargingç»“æŸ
         {
             if (!stopCharging)
                 break;
         }
-        //°ÑÏÂÒ»¸öwaiting·ÅÈëcharging
+        //æŠŠä¸‹ä¸€ä¸ªwaitingæ”¾å…¥charging
         if (WaitCount != 0)
         {
             PutWaitingToCharging();
