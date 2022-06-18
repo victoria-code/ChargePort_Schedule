@@ -705,7 +705,7 @@ int Server::getCurWaitNum(string usrname)
             //获取等候区内前车等待数目
             for (auto i = WUser.rbegin(); i != WUser.rend(); i++)
             {
-                if (!i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
+                if (WUser[i->first] && !i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
             //获取充电区内同模式下所有等待的车辆数目
@@ -909,7 +909,7 @@ int Server::openCP(string usrname, int SID) {
         std::cout << res;
         return -1;
     }
-    if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
+    if (uE->role == "admin" && 0 <= SID < CHARGEPORT_NUM) {
         cData[SID]->on();
         res = "充电桩" + to_string(SID) + "启动成功!\n";
         strcpy_s(send_info.output, res.c_str());
@@ -941,7 +941,7 @@ int Server::closeCP(string usrname, int SID) {
         server_sock.Send(send_info);
         return -1;
     }
-    if (uE->role == "admin" && 0 < SID < CHARGEPORT_NUM) {
+    if (uE->role == "admin" && 0 <= SID < CHARGEPORT_NUM) {
         cData[SID]->off();
         res = "充电桩" + to_string(SID) + "关闭成功!\n";
         strcpy_s(send_info.output, res.c_str());
