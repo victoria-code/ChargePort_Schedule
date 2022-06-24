@@ -386,7 +386,7 @@ int Server::signUp(string usrname, string passwd, string role)
 }
 
 // cmd:102 充值、扣费（amount为正表示充值后的余额，为负表示要扣除的金额）---ok
-int Server::balanceChange(string usrname, int amount)
+int Server::balanceChange(string usrname, double amount)
 {
     strcpy_s(send_info.UID, usrname.c_str());
     usrEntry* uE = database.usrData[usrname];
@@ -470,7 +470,8 @@ int Server::copeChargeRequest(CarAsk* ask)
         if (w == nullptr)
         {
             //若等候区已满则无法处理请求
-            if (WUser.size() > MAX_WAIT_NUM)
+            //if (WUser.size() > MAX_WAIT_NUM)
+            if (WUser.size() > (FAST_NUM + SLOW_NUM)* QUEUE_LENGTH + MAX_WAIT_NUM)  //充电区+等待区
             {
                 res = "当前等候区已满，无法处理新的用户请求！\n";
                 strcpy_s(send_info.output, res.c_str());
@@ -783,7 +784,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     fTime = tTime = INT32_MAX;
     fSID = tSID = -1;
     for (int i = 0; i < FAST_NUM; i++) {
-        if (cData[i]->WaitCount > MAX_WAIT_NUM || cData[i]->OnState == false)
+        if (cData[i]->WaitCount >= QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
@@ -797,7 +798,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
         }
     }
     for (int i = FAST_NUM; i < CHARGEPORT_NUM; i++) {
-        if (cData[i]->WaitCount > MAX_WAIT_NUM || cData[i]->OnState == false)
+        if (cData[i]->WaitCount >= QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
