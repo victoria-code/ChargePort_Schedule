@@ -10,83 +10,83 @@
 #include "windows.h"
 #include<iostream>
 
-typedef struct // ³äµç±¨±í£¬for admin
+typedef struct // å……ç”µæŠ¥è¡¨ï¼Œfor admin
 {
-    int SID;           // ³äµç×®±àºÅ
-    bool IsFastCharge; // ¿ì³ä»¹ÊÇÂı³ä£¬¿ì³äÎª1,Âı³äÎª0
-    bool OnState;      // ¿ª¹Ø×´Ì¬£¬true¿ªfalse¹Ø
-    bool IsCharging;   // Îª true Ôò³äµçÇøÓĞ³µ
+    int SID;           // å……ç”µæ¡©ç¼–å·
+    bool IsFastCharge; // å¿«å……è¿˜æ˜¯æ…¢å……ï¼Œå¿«å……ä¸º1,æ…¢å……ä¸º0
+    bool OnState;      // å¼€å…³çŠ¶æ€ï¼Œtrueå¼€falseå…³
+    bool IsCharging;   // ä¸º true åˆ™å……ç”µåŒºæœ‰è½¦
 
-    int WaitNum;   //µÈ´ıÇø³µÁ¾ÉÏÏŞ
-    int WaitCount; //µÈ´ıÇø³µÁ¾ÊıÄ¿
+    int WaitNum;   //ç­‰å¾…åŒºè½¦è¾†ä¸Šé™
+    int WaitCount; //ç­‰å¾…åŒºè½¦è¾†æ•°ç›®
 
-    int PastChargeCnt;        // ¿ª»úÇ°ÀÛ¼Æ³äµç´ÎÊı
-    double PastChargeCost;    // ¿ª»úÇ°ÀÛ¼Æ×Ü·ÑÓÃ¡£µ¥Î»/Ôª
-    long long PastChargeTime; // ¿ª»úÇ°ÀÛ¼Æ³äµçÊ±³¤¡£µ¥Î»/s
-    double PastTotalElect;    // ¿ª»úÇ°ÀÛ¼Æ×Ü³äµçÁ¿¡£µ¥Î»/¶È
-    double PastElectCost;     // ¿ª»úÇ°ÀÛ¼Æ³äµç·ÑÓÃ¡£µ¥Î»/Ôª
-    double PastServiceCost;   // ¿ª»úÇ°ÀÛ¼Æ·şÎñ·ÑÓÃ¡£µ¥Î»/Ôª
+    int PastChargeCnt;        // å¼€æœºå‰ç´¯è®¡å……ç”µæ¬¡æ•°
+    double PastChargeCost;    // å¼€æœºå‰ç´¯è®¡æ€»è´¹ç”¨ã€‚å•ä½/å…ƒ
+    long long PastChargeTime; // å¼€æœºå‰ç´¯è®¡å……ç”µæ—¶é•¿ã€‚å•ä½/s
+    double PastTotalElect;    // å¼€æœºå‰ç´¯è®¡æ€»å……ç”µé‡ã€‚å•ä½/åº¦
+    double PastElectCost;     // å¼€æœºå‰ç´¯è®¡å……ç”µè´¹ç”¨ã€‚å•ä½/å…ƒ
+    double PastServiceCost;   // å¼€æœºå‰ç´¯è®¡æœåŠ¡è´¹ç”¨ã€‚å•ä½/å…ƒ
 
-    int ChargeCnt;        // ¿ª»úºóÀÛ¼Æ³äµç´ÎÊı
-    double ChargeCost;    // ¿ª»úºó×Ü·ÑÓÃ¡£µ¥Î»/Ôª
-    long long ChargeTime; // ¿ª»úºó³äµçÊ±³¤¡£µ¥Î»/min
-    double TotalElect;    // ¿ª»úºó×Ü³äµçÁ¿¡£µ¥Î»/¶È
-    double ElectCost;     // ¿ª»úºó³äµç·ÑÓÃ¡£µ¥Î»/Ôª
-    double ServiceCost;   // ¿ª»úºó·şÎñ·ÑÓÃ¡£µ¥Î»/Ôª
+    int ChargeCnt;        // å¼€æœºåç´¯è®¡å……ç”µæ¬¡æ•°
+    double ChargeCost;    // å¼€æœºåæ€»è´¹ç”¨ã€‚å•ä½/å…ƒ
+    long long ChargeTime; // å¼€æœºåå……ç”µæ—¶é•¿ã€‚å•ä½/min
+    double TotalElect;    // å¼€æœºåæ€»å……ç”µé‡ã€‚å•ä½/åº¦
+    double ElectCost;     // å¼€æœºåå……ç”µè´¹ç”¨ã€‚å•ä½/å…ƒ
+    double ServiceCost;   // å¼€æœºåæœåŠ¡è´¹ç”¨ã€‚å•ä½/å…ƒ
 
-    time_t TableTime; // ×´Ì¬ĞÅÏ¢Éú³ÉÊ±¼ä
+    time_t TableTime; // çŠ¶æ€ä¿¡æ¯ç”Ÿæˆæ—¶é—´
 } CPStatusTable;
 
-//Ïêµ¥±àºÅ¡¢Ïêµ¥Éú³ÉÊ±¼ä¡¢³äµç×®±àºÅ¡¢³äµçµçÁ¿¡¢³äµçÊ±³¤¡¢Æô¶¯Ê±¼ä¡¢Í£Ö¹Ê±¼ä¡¢³äµç·ÑÓÃ¡¢·şÎñ·ÑÓÃ¡¢×Ü·ÑÓÃ
-typedef struct // ³äµçÏêµ¥,for user
+//è¯¦å•ç¼–å·ã€è¯¦å•ç”Ÿæˆæ—¶é—´ã€å……ç”µæ¡©ç¼–å·ã€å……ç”µç”µé‡ã€å……ç”µæ—¶é•¿ã€å¯åŠ¨æ—¶é—´ã€åœæ­¢æ—¶é—´ã€å……ç”µè´¹ç”¨ã€æœåŠ¡è´¹ç”¨ã€æ€»è´¹ç”¨
+typedef struct // å……ç”µè¯¦å•,for user
 {
-    int ChargeID;           // Ïêµ¥±àºÅ
-    time_t CreateTableTime; // Ïêµ¥Éú³ÉÊ±¼ä
-    int SID;                // ³äµç×®±àºÅ
-    bool IsFastCharge;      // ³äµçÄ£Ê½,1Îª¿ì³ä
-    std::string usrname;    // ³µÁ¾ÓÃ»§Ãû
-    time_t StartTime;       // Æô¶¯Ê±¼ä
-    time_t End_Time;        // Í£Ö¹Ê±¼ä
-    double TotalElect;      // ×Ü³äµçµçÁ¿,µ¥Î»/Ôª
-    long long ChargeTime;   // ³äµçÊ±³¤£¬µ¥Î»/s
-    double ChargeCost;      // ×Ü·ÑÓÃ£¬µ¥Î»/Ôª
-    double ServiceCost;     // ·şÎñ·Ñ£¬µ¥Î»/Ôª
-    double ElectCost;       // µç·Ñ£¬µ¥Î»/Ôª
+    int ChargeID;           // è¯¦å•ç¼–å·
+    time_t CreateTableTime; // è¯¦å•ç”Ÿæˆæ—¶é—´
+    int SID;                // å……ç”µæ¡©ç¼–å·
+    bool IsFastCharge;      // å……ç”µæ¨¡å¼,1ä¸ºå¿«å……
+    std::string usrname;    // è½¦è¾†ç”¨æˆ·å
+    time_t StartTime;       // å¯åŠ¨æ—¶é—´
+    time_t End_Time;        // åœæ­¢æ—¶é—´
+    double TotalElect;      // æ€»å……ç”µç”µé‡,å•ä½/å…ƒ
+    long long ChargeTime;   // å……ç”µæ—¶é•¿ï¼Œå•ä½/s
+    double ChargeCost;      // æ€»è´¹ç”¨ï¼Œå•ä½/å…ƒ
+    double ServiceCost;     // æœåŠ¡è´¹ï¼Œå•ä½/å…ƒ
+    double ElectCost;       // ç”µè´¹ï¼Œå•ä½/å…ƒ
 } CostTable;
 
-class ChargePort //³äµç×®
+class ChargePort //å……ç”µæ¡©
 {
 public:
-    int SID;           // ³äµç×®±àºÅ
-    bool IsFastCharge; // ¿ì³ä»¹ÊÇÂı³ä£¬¿ì³äÎª1,Âı³äÎª0
-    bool OnState;      // ¿ª¹Ø×´Ì¬£¬1¿ª0¹Ø
+    int SID;           // å……ç”µæ¡©ç¼–å·
+    bool IsFastCharge; // å¿«å……è¿˜æ˜¯æ…¢å……ï¼Œå¿«å……ä¸º1,æ…¢å……ä¸º0
+    bool OnState;      // å¼€å…³çŠ¶æ€ï¼Œ1å¼€0å…³
 
-    bool IsCharging;           // Îª1³äµçÇøÓĞ³µ
-    CarReply ChargingCarReply; // ÕıÔÚ³äµçµÄÆû³µµÄ³äµçÏìÓ¦
-    int CurElectReq;           // ÕıÔÚ³äµçµÄ³µ´ı³äµçÁ¿
-    Car* ChargingCar;          // ÕıÔÚ³äµçµÄ³µ
-    bool stopCharging;         // ÖĞÖ¹³äµç±êÖ¾
+    bool IsCharging;           // ä¸º1å……ç”µåŒºæœ‰è½¦
+    CarReply ChargingCarReply; // æ­£åœ¨å……ç”µçš„æ±½è½¦çš„å……ç”µå“åº”
+    double CurElectReq;           // æ­£åœ¨å……ç”µçš„è½¦å¾…å……ç”µé‡
+    Car* ChargingCar;          // æ­£åœ¨å……ç”µçš„è½¦
+    bool stopCharging;         // ä¸­æ­¢å……ç”µæ ‡å¿—
 
-    int WaitNum;                           //µÈ´ıÇø³µÁ¾ÉÏÏŞ
-    int WaitCount;                         //µÈ´ıÇø³µÁ¾ÊıÄ¿
-    std::vector<CarReply> WaitingCarReply; // µ±Ç°µÈ´ı´¦ÀíµÄ³äµçÏìÓ¦
-    std::vector<Car*> WaitingCar;         // ÕıÔÚµÈ´ıµÄ³µ
+    int WaitNum;                           //ç­‰å¾…åŒºè½¦è¾†ä¸Šé™
+    int WaitCount;                         //ç­‰å¾…åŒºè½¦è¾†æ•°ç›®
+    std::vector<CarReply> WaitingCarReply; // å½“å‰ç­‰å¾…å¤„ç†çš„å……ç”µå“åº”
+    std::vector<Car*> WaitingCar;         // æ­£åœ¨ç­‰å¾…çš„è½¦
 
-    int ChargeCnt;        // ¿ª»úºóÀÛ¼Æ³äµç´ÎÊı
-    double ChargeCost;    // ¿ª»úºóÀÛ¼Æ×Ü·ÑÓÃ¡£µ¥Î»/Ôª
-    double ElectCost;     // ¿ª»úºóÀÛ¼Æµç·Ñ¡£µ¥Î»/Ôª
-    long long ChargeTime; // ¿ª»úºóÀÛ¼Æ³äµçÊ±³¤¡£µ¥Î»/min
-    double TotalElect;    // ¿ª»úºóÀÛ¼Æ×Ü³äµçÁ¿¡£µ¥Î»/¶È
-    double ServiceCost;   // ¿ª»úºóÀÛ¼Æ·şÎñ·ÑÓÃ¡£µ¥Î»/Ôª
+    int ChargeCnt;        // å¼€æœºåç´¯è®¡å……ç”µæ¬¡æ•°
+    double ChargeCost;    // å¼€æœºåç´¯è®¡æ€»è´¹ç”¨ã€‚å•ä½/å…ƒ
+    double ElectCost;     // å¼€æœºåç´¯è®¡ç”µè´¹ã€‚å•ä½/å…ƒ
+    long long ChargeTime; // å¼€æœºåç´¯è®¡å……ç”µæ—¶é•¿ã€‚å•ä½/min
+    double TotalElect;    // å¼€æœºåç´¯è®¡æ€»å……ç”µé‡ã€‚å•ä½/åº¦
+    double ServiceCost;   // å¼€æœºåç´¯è®¡æœåŠ¡è´¹ç”¨ã€‚å•ä½/å…ƒ
 
-    int PastChargeCnt;        // ¿ª»úÇ°ÀÛ¼Æ³äµç´ÎÊı
-    double PastChargeCost;    // ¿ª»úÇ°ÀÛ¼Æ×Ü·ÑÓÃ¡£µ¥Î»/Ôª
-    double PastElectCost;     // ¿ª»úÇ°ÀÛ¼Æµç·Ñ¡£µ¥Î»/Ôª
-    long long PastChargeTime; // ¿ª»úÇ°ÀÛ¼Æ³äµçÊ±³¤¡£µ¥Î»/min
-    double PastTotalElect;    // ¿ª»úÇ°ÀÛ¼Æ×Ü³äµçÁ¿¡£µ¥Î»/¶È
-    double PastServiceCost;   // ¿ª»úÇ°ÀÛ¼Æ·şÎñ·ÑÓÃ¡£µ¥Î»/Ôª
+    int PastChargeCnt;        // å¼€æœºå‰ç´¯è®¡å……ç”µæ¬¡æ•°
+    double PastChargeCost;    // å¼€æœºå‰ç´¯è®¡æ€»è´¹ç”¨ã€‚å•ä½/å…ƒ
+    double PastElectCost;     // å¼€æœºå‰ç´¯è®¡ç”µè´¹ã€‚å•ä½/å…ƒ
+    long long PastChargeTime; // å¼€æœºå‰ç´¯è®¡å……ç”µæ—¶é•¿ã€‚å•ä½/min
+    double PastTotalElect;    // å¼€æœºå‰ç´¯è®¡æ€»å……ç”µé‡ã€‚å•ä½/åº¦
+    double PastServiceCost;   // å¼€æœºå‰ç´¯è®¡æœåŠ¡è´¹ç”¨ã€‚å•ä½/å…ƒ
 
-    std::mutex CPlock; // ³äµç×®»¥³âËø
+    std::mutex CPlock; // å……ç”µæ¡©äº’æ–¥é”
 
     ChargePort(int CPID,
         bool fast,
@@ -97,51 +97,51 @@ public:
         double ECost = 0,
         long long CTime = 0,
         double TElect = 0,
-        double SCost = 0);              // ³äµç×®±àºÅ£¬ÊÇ·ñÎª¿ì³ä£¬ÊÇ·ñÎª¿ª,µÈ´ıÇø³µÁ¾ÉÏÏŞ,Ê£ÏÂµÄÊÇ¿ª»úÇ°µÄÍ³¼ÆÊı¾İ,±ãÓÚÊı¾İ³Ö¾Ã»¯ºÍÖØÔØ
-    bool off();                                // ¹Ø±Õ³äµç×®£¬1Îª³É¹¦,Ê§°ÜÊÇÒòÎªÓĞ³µÕıÔÚ³äµçÇø
-    bool on();                                 // ´ò¿ª³äµç×®,1Îª³É¹¦
-    CPStatusTable GetStatus();                 // ·µ»Ø³äµç×®×´Ì¬
-    CarReply GetChargingCar();                 // ·µ»ØÕıÔÚ³äµçµÄ³µÁ¾ĞÅÏ¢
-    bool AddCar(CarReply myreply, Car* mycar); // Ôö¼ÓÒ»Á¾³µ,1Îª³É¹¦
-    bool DeleteCar(Car* mycar);                // É¾³ıÒ»Á¾³µ,1Îª³É¹¦,0Îª³µ²»´æÔÚ
-    void PutWaitingToCharging();               //½«WaitingµÄCar·ÅÈëCharging£¬ÓÉ³äµç×®×Ô¶¯µ÷ÓÃ£¬ÇëÎğÔÚ±ğµÄÎÄ¼şµ÷ÓÃ
+        double SCost = 0);              // å……ç”µæ¡©ç¼–å·ï¼Œæ˜¯å¦ä¸ºå¿«å……ï¼Œæ˜¯å¦ä¸ºå¼€,ç­‰å¾…åŒºè½¦è¾†ä¸Šé™,å‰©ä¸‹çš„æ˜¯å¼€æœºå‰çš„ç»Ÿè®¡æ•°æ®,ä¾¿äºæ•°æ®æŒä¹…åŒ–å’Œé‡è½½
+    bool off();                                // å…³é—­å……ç”µæ¡©ï¼Œ1ä¸ºæˆåŠŸ,å¤±è´¥æ˜¯å› ä¸ºæœ‰è½¦æ­£åœ¨å……ç”µåŒº
+    bool on();                                 // æ‰“å¼€å……ç”µæ¡©,1ä¸ºæˆåŠŸ
+    CPStatusTable GetStatus();                 // è¿”å›å……ç”µæ¡©çŠ¶æ€
+    CarReply GetChargingCar();                 // è¿”å›æ­£åœ¨å……ç”µçš„è½¦è¾†ä¿¡æ¯
+    bool AddCar(CarReply myreply, Car* mycar); // å¢åŠ ä¸€è¾†è½¦,1ä¸ºæˆåŠŸ
+    bool DeleteCar(Car* mycar);                // åˆ é™¤ä¸€è¾†è½¦,1ä¸ºæˆåŠŸ,0ä¸ºè½¦ä¸å­˜åœ¨
+    void PutWaitingToCharging();               //å°†Waitingçš„Caræ”¾å…¥Chargingï¼Œç”±å……ç”µæ¡©è‡ªåŠ¨è°ƒç”¨ï¼Œè¯·å‹¿åœ¨åˆ«çš„æ–‡ä»¶è°ƒç”¨
 };
 
-struct ChargeThreadPool // ¿ªÊ¼³äµçÇëÇó³Ø
+struct ChargeThreadPool // å¼€å§‹å……ç”µè¯·æ±‚æ± 
 {
-    bool isAvailable;          // ÊÇ·ñÓĞĞÂµÄÇëÇó
-    ChargePort* ChargePortPtr; // ³äµç×®
-    Car* CarPtr;               // Æû³µ
-    CarReply* RepPtr;          // ³äµçÇëÇó
-    double ElectReq;           // ³äµçÁ¿
+    bool isAvailable;          // æ˜¯å¦æœ‰æ–°çš„è¯·æ±‚
+    ChargePort* ChargePortPtr; // å……ç”µæ¡©
+    Car* CarPtr;               // æ±½è½¦
+    CarReply* RepPtr;          // å……ç”µè¯·æ±‚
+    double ElectReq;           // å……ç”µé‡
     ChargeThreadPool* next;
 };
 
-struct ChargeTablePool // ¿ªÊ¼·µ»ØÏêµ¥ÇëÇó³Ø
+struct ChargeTablePool // å¼€å§‹è¿”å›è¯¦å•è¯·æ±‚æ± 
 {
-    bool isAvailable;      //ÊÇ·ñÓĞĞÂµÄÇëÇó
-    CostTable ChargeTable; //³äµçÏêµ¥
-    ChargeTablePool* next; //Á´±íµÄÏÂÒ»¸öÎ»ÖÃ
+    bool isAvailable;      //æ˜¯å¦æœ‰æ–°çš„è¯·æ±‚
+    CostTable ChargeTable; //å……ç”µè¯¦å•
+    ChargeTablePool* next; //é“¾è¡¨çš„ä¸‹ä¸€ä¸ªä½ç½®
 };
 
-extern ChargeTablePool* ChargeTableHead; // »Ø¸´³äµçÏêµ¥ÇëÇó¶ÓÁĞÍ·
-extern ChargeTablePool* ChargeTableTail; // »Ø¸´³äµçÏêµ¥ÇëÇó¶ÓÁĞÎ²
-extern std::mutex ChargeTablelock;       //³äµçÏêµ¥ÇëÇó»¥³âËø
+extern ChargeTablePool* ChargeTableHead; // å›å¤å……ç”µè¯¦å•è¯·æ±‚é˜Ÿåˆ—å¤´
+extern ChargeTablePool* ChargeTableTail; // å›å¤å……ç”µè¯¦å•è¯·æ±‚é˜Ÿåˆ—å°¾
+extern std::mutex ChargeTablelock;       //å……ç”µè¯¦å•è¯·æ±‚äº’æ–¥é”
 
 int ChargeProc(ChargePort* ChargePortPtr,
     Car* CarPtr,
     CarReply* RepPtr,
-    double ElectReq); //Ò»¸ö³äµçÏß³Ì£º³äµç×®Ö¸Õë£¬³µÖ¸Õë£¬³äµç±¨±íÖ¸Õë£¬³äµçÁ¿
-void ChargeThread();             //Ò»¸ö¶ÔÏß³Ì³ØÑ­»·´¦ÀíµÄÏß³Ì
-void BuildChargePortThread();    // ÔÚ·şÎñÆ÷¿ªÊ¼Ê±µ÷ÓÃ£¬Æô¶¯Ïß³Ì¹ÜÀí£¬¼´¶Ô³äµçµÄÄ£Äâ
+    double ElectReq); //ä¸€ä¸ªå……ç”µçº¿ç¨‹ï¼šå……ç”µæ¡©æŒ‡é’ˆï¼Œè½¦æŒ‡é’ˆï¼Œå……ç”µæŠ¥è¡¨æŒ‡é’ˆï¼Œå……ç”µé‡
+void ChargeThread();             //ä¸€ä¸ªå¯¹çº¿ç¨‹æ± å¾ªç¯å¤„ç†çš„çº¿ç¨‹
+void BuildChargePortThread();    // åœ¨æœåŠ¡å™¨å¼€å§‹æ—¶è°ƒç”¨ï¼Œå¯åŠ¨çº¿ç¨‹ç®¡ç†ï¼Œå³å¯¹å……ç”µçš„æ¨¡æ‹Ÿ
 #endif
 
 /*
-struct StopThreadPool // Í£Ö¹³äµçÇëÇó³Ø
+struct StopThreadPool // åœæ­¢å……ç”µè¯·æ±‚æ± 
 {
-    bool isAvailable;          //ÊÇ·ñÓĞĞÂµÄÇëÇó
-    ChargePort *ChargePortPtr; // ³äµç×®
-    Car *CarPtr;               //Æû³µ
+    bool isAvailable;          //æ˜¯å¦æœ‰æ–°çš„è¯·æ±‚
+    ChargePort *ChargePortPtr; // å……ç”µæ¡©
+    Car *CarPtr;               //æ±½è½¦
     StopThreadPool *next;
 };
 void StopChargeThread();
