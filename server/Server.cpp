@@ -420,13 +420,13 @@ int Server::deleteUsr(string usrname)
     strcpy_s(send_info.UID, usrname.c_str());
     string res = "用户<" + usrname + ">注销成功!\n";
     //等候区注销
-    if (WUser[usrname]) {
+    if (WUser.find(usrname)!=WUser.end()) {
         WUser.erase(usrname);
         queueData.erase(usrname);
     }
 
     //充电区注销
-    else if (CUser[usrname]) {
+    else if (CUser.find(usrname)!=CUser.end()) {
         //正在充电则先生成详单
         int num = CUserID[usrname];
         if (cData[num]->ChargingCar->usrname == usrname) {
@@ -454,7 +454,7 @@ int Server::copeChargeRequest(CarAsk* ask)
     send_info.MODE = ask->IsFastCharge;
     string res;
     //充电区内无法提交、修改用户请求
-    if (CUser[ask->usrname])
+    if (CUser.find(ask->usrname)!=CUser.end())
     {
         res = "车辆当前位于充电区，无法修改充电请求！";
         strcpy_s(send_info.output, res.c_str());
@@ -465,13 +465,15 @@ int Server::copeChargeRequest(CarAsk* ask)
     }
     else
     {
-        CarAsk* w = WUser[ask->usrname];
+        auto ss = WUser.find(ask->usrname);
+        CarAsk* w = nullptr;
+        if (ss != WUser.end())
+            w = ss->second;
         //若用户第一次提交充电请求
         if (w == nullptr)
         {
             //若等候区已满则无法处理请求
-            //if (WUser.size() > MAX_WAIT_NUM)
-            if (WUser.size() > (FAST_NUM + SLOW_NUM)* QUEUE_LENGTH + MAX_WAIT_NUM)  //充电区+等待区
+            if (WUser.size() > MAX_WAIT_NUM )
             {
                 res = "当前等候区已满，无法处理新的用户请求！\n";
                 strcpy_s(send_info.output, res.c_str());
@@ -570,10 +572,10 @@ int Server::cancelCharge(string usrname)
     }
 
     //当前用户在等候区或故障队列，则删除充电请求，离开等候区
-    if (WUser[usrname] || FUser[usrname])
+    if (WUser.find(usrname)!=WUser.end() || FUser[usrname])
     {
         queueData.erase(usrname);
-        if (WUser[usrname])
+        if (WUser.find(usrname)!=WUser.end())
             WUser.erase(usrname);
         else
             FUser.erase(usrname);
@@ -683,8 +685,11 @@ int Server::getCurWaitNum(string usrname)
     auto ask = this->queueData.find(usrname);
     int qNum = stoi(ask->second.first.substr(1)); //排队号码
 
+    auto ss =WUser.find(usrname);
+    CarAsk* w=nullptr;
     //如果车辆位于等候区
-    CarAsk* w = WUser[usrname];
+    if (ss != WUser.end())
+        w = ss->second;
     if (w)
     {
         if (w->IsFastCharge)
@@ -692,7 +697,7 @@ int Server::getCurWaitNum(string usrname)
             //获取等候区内前车等待数目
             for (auto i = WUser.begin(); i != WUser.end(); i++)
             {
-                if (WUser[i->first] && i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
+                if (WUser.find(i->first)!=WUser.end() && i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
             //获取充电区内同模式下所有等待的车辆数目
@@ -706,7 +711,7 @@ int Server::getCurWaitNum(string usrname)
             //获取等候区内前车等待数目
             for (auto i = WUser.rbegin(); i != WUser.rend(); i++)
             {
-                if (WUser[i->first] && !i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
+                if (WUser.find(i->first)!=WUser.end()&&!i->second->IsFastCharge && qNum > stoi(queueData[i->first].first.substr(1)))
                     num++;
             }
             //获取充电区内同模式下所有等待的车辆数目
@@ -763,12 +768,12 @@ int Server::Calling(string& fUser, string& tUser)
     for (auto i = queueData.begin(); i != queueData.end(); i++)
     {
         int cur = stoi(i->second.first.substr(1));
-        if ((WUser[i->first] && reqRes[i->first]) && i->second.first[0] == 'F' && cur < fast)
+        if ((WUser.find(i->first)!=WUser.end() && reqRes[i->first]) && i->second.first[0] == 'F' && cur < fast)
         {
             fast = cur;
             fUser = i->first;
         }
-        if (WUser[i->first] && reqRes[i->first] && i->second.first[0] == 'T' && cur < slow)
+        if (WUser.find(i->first) != WUser.end() && reqRes[i->first] && i->second.first[0] == 'T' && cur < slow)
         {
             slow = cur;
             tUser = i->first;
@@ -784,7 +789,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     fTime = tTime = INT32_MAX;
     fSID = tSID = -1;
     for (int i = 0; i < FAST_NUM; i++) {
-        if (cData[i]->WaitCount >= QUEUE_LENGTH || cData[i]->OnState == false)
+        if (cData[i]->WaitCount +1 == QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
@@ -798,7 +803,7 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
         }
     }
     for (int i = FAST_NUM; i < CHARGEPORT_NUM; i++) {
-        if (cData[i]->WaitCount >= QUEUE_LENGTH || cData[i]->OnState == false)
+        if (cData[i]->WaitCount +1 == QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
