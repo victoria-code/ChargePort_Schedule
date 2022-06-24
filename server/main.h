@@ -14,14 +14,14 @@
 extern std::mutex serverlock;       //服务器操作互斥锁
 
 //可变参数
-#define MAX_WAIT_NUM 6  //等候区最大车位容量
-#define QUEUE_LENGTH 2  //充电桩排队队列长度
+#define MAX_WAIT_NUM 10  //等候区最大车位容量
+#define QUEUE_LENGTH 3  //充电桩排队队列长度
 #define FAST_NUM 2		//快充充电桩数目
 #define SLOW_NUM 3		//慢充充电桩数目
 
 
 #define FAST_POWER 30   //快充功率（单位：度/小时）
-#define SLOW_POWER 7    //慢充功率（单位：度/小时）
+#define SLOW_POWER 10    //慢充功率（单位：度/小时）
 
 //充电模式mode
 #define FAST 1
