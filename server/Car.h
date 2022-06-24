@@ -2,38 +2,38 @@
 #define CAR_H
 #include <ctime>
 #include <string>
-//#include "ChargePort.h" //³äµçÏêµ¥
+//#include "ChargePort.h" //å……ç”µè¯¦å•
 
-typedef struct //Æû³µ³äµçÇëÇó
+typedef struct //æ±½è½¦å……ç”µè¯·æ±‚
 {
-    std::string usrname; // ÓÃ»§ID
-    int ChargeCap;       // ÇëÇó³äµçÁ¿(³äµç×®Ê¹ÓÃ)
-    bool IsFastCharge;   // ¿ì³ä»¹ÊÇÂı³ä£¬¿ì³äÎª1
-    double BatteryCap;   // µç³ØÈİÁ¿
-    double BatteryNow;   // µ±Ç°µç³ØµçÁ¿
-    time_t StWaitTime;   // ¿ªÊ¼µÈ´ıÊ±¼ä
+    std::string usrname; // ç”¨æˆ·ID
+    double ChargeCap;       // è¯·æ±‚å……ç”µé‡
+    bool IsFastCharge;   // å¿«å……è¿˜æ˜¯æ…¢å……ï¼Œå¿«å……ä¸º1
+    double BatteryCap;   // ç”µæ± å®¹é‡
+    double BatteryNow;   // å½“å‰ç”µæ± ç”µé‡
+    time_t StWaitTime;   // å¼€å§‹ç­‰å¾…æ—¶é—´
 } CarAsk;
 
-typedef struct // ³äµç×®¶ÔÆû³µ³äµçÏìÓ¦
+typedef struct // å……ç”µæ¡©å¯¹æ±½è½¦å……ç”µå“åº”
 {
-    CarAsk Ask;           // °üº¬Ò»¸öASKÀïµÄĞÅÏ¢
-    int SID;              // ³äµç×®ID
-    int num;              // Æû³µÔÚ¸Ã³äµç×®µÄÅÅ¶ÓºÅ, 0¿ÉÒÔÖ±½Ó³äµç, ÎªÆäËûÊı×Ö±íÊ¾Ç°ÃæÓĞ¼¸Á¾³µ
+    CarAsk Ask;           // åŒ…å«ä¸€ä¸ªASKé‡Œçš„ä¿¡æ¯
+    int SID;              // å……ç”µæ¡©ID
+    int num;              // æ±½è½¦åœ¨è¯¥å……ç”µæ¡©çš„æ’é˜Ÿå·, 0å¯ä»¥ç›´æ¥å……ç”µ, ä¸ºå…¶ä»–æ•°å­—è¡¨ç¤ºå‰é¢æœ‰å‡ è¾†è½¦
     char MODE;            // F or S
-    time_t StChargeTime;  // ¿ªÊ¼³äµçÊ±¼ä(µ±Æû³µÎ´¿ªÊ¼³äµçÊ±´ËÖµÎŞÒâÒå)
-    std::string queueNum; //ÅÅ¶ÓºÅ(e.g. F1, S2)
-    int waitingNum;       //Ç°³µµÈ´ıÊıÁ¿
+    time_t StChargeTime;  // å¼€å§‹å……ç”µæ—¶é—´(å½“æ±½è½¦æœªå¼€å§‹å……ç”µæ—¶æ­¤å€¼æ— æ„ä¹‰)
+    std::string queueNum; //æ’é˜Ÿå·(e.g. F1, S2)
+    int waitingNum;       //å‰è½¦ç­‰å¾…æ•°é‡
 } CarReply;
 
-class Car // ³µÁ¾
+class Car // è½¦è¾†
 {
 public:
-    std::string usrname;       // ÓÃ»§Ãû
-    double BatteryCap = 0.0;   // µç³ØÈİÁ¿
-    double BatteryNow = 0.0;   // µ±Ç°µç³ØµçÁ¿
-    CarAsk* Ask = nullptr;     // ÎªNULLÊ±Ã»ÓĞask
-    CarReply* Reply = nullptr; // ÎªNULLÊ±Ã»ÓĞreply
-    // CostTable *info = nullptr; //³äµçÏêµ¥
+    std::string usrname;       // ç”¨æˆ·å
+    double BatteryCap = 0.0;   // ç”µæ± å®¹é‡
+    double BatteryNow = 0.0;   // å½“å‰ç”µæ± ç”µé‡
+    CarAsk* Ask = nullptr;     // ä¸ºNULLæ—¶æ²¡æœ‰ask
+    CarReply* Reply = nullptr; // ä¸ºNULLæ—¶æ²¡æœ‰reply
+    // CostTable *info = nullptr; //å……ç”µè¯¦å•
 
     Car(std::string uname = "", std::string Cname = "", double BCap = 0.0, double BNow = 0.0);
     ~Car();
