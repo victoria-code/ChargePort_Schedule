@@ -25,7 +25,7 @@ typedef struct UsrEntry {
     string usrname;
     string passwd;//密码sha1值
     string role;//customer 或 admin
-    int balance;//余额
+    double balance;//余额
     UsrEntry() {};
 }usrEntry;
 
@@ -115,7 +115,7 @@ public:
     int deleteUsr(string usrname);//用户注销
 
     //CUSTOMER
-    int balanceChange(string usrname, int amount);//充值、扣费（customer)***
+    int balanceChange(string usrname, double amount);//充值、扣费（customer)***
     int copeChargeRequest(CarAsk* ask);//处理等候区内用户的充电请求(customer)***
     int cancelCharge(string usrname);//处理用户取消充电申请(customer)***
     int getQueueData(string usrname, string& qNum, int& curWait);//获取排队信息(customer)***
