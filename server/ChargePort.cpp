@@ -5,33 +5,42 @@ const double LOW_ELEC_PRICE = 0.4;    // 谷电价，单位元/度
 const double NORMAL_ELEC_PRICE = 0.7; // 平电价，单位元/度
 const double SERVICE_PRICE = 0.8;     // 服务价，单位元/度
 const double FAST_CHARGE_RATE = 30;   // 快充功率，单位度/小时
-const double SLOW_CHARGE_RATE = 10;    // 慢充功率，单位度/小时
+const double SLOW_CHARGE_RATE = 10;   // 慢充功率，单位度/小时
 
 CPStatusTable NULLStatusTable; // 空状态表
 CarReply NULLCarReply;         // 空充电请求
-ChargeThreadPool* ChargeHead;  // 开始充电请求队列头
-ChargeThreadPool* ChargeTail;  // 开始充电请求队列尾
+ChargeThreadPool *ChargeHead;  // 开始充电请求队列头
+ChargeThreadPool *ChargeTail;  // 开始充电请求队列尾
 int ChargeTableID = 0;         // 用来生成充电详单ID
 // StopThreadPool *StopHead;      // 结束充电请求池队列头
 // StopThreadPool *StopTail;      // 结束充电请求池队列尾
 
-ChargeTablePool* ChargeTableHead; // 回复充电详单请求队列头
-ChargeTablePool* ChargeTableTail; // 回复充电详单请求队列尾
+ChargeTablePool *ChargeTableHead; // 回复充电详单请求队列头
+ChargeTablePool *ChargeTableTail; // 回复充电详单请求队列尾
 
 std::mutex Chargelock;      // 添加充电过程到线程池的互斥锁
 std::mutex ChargeTablelock; // 添加充电详单到请求池的互斥锁
 
-int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double ElectReq)
+const int CHANGE_SIZE = 8;                          // 类型转化的时间集合的大小
+int TimeChange[8] = {0, 7, 10, 15, 18, 21, 23, 24}; // 类型转化时间
+int ChangeKind[8] = {0, 1, 2, 1, 2, 1, 0, 0};       // 每个TimeChage时间对应的的转化类型 0谷1平2峰
+double KindPrice[3] = {0.4, 0.7, 1.0};              // 谷、平、峰电价
+
+int ChargeProc(ChargePort *ChargePortPtr, Car *CarPtr, CarReply *RepPtr, double ElectReq)
 {
     ++ChargePortPtr->ChargeCnt;
-    double ElectNow = 0;            // 当前充电量
-    double ServicePrice = 0;        // 当前服务价
-    double ElectPrice = 0;          // 当前总电价
-    time_t start_time = time(NULL); // 起始时间
-    RepPtr->StChargeTime = start_time;
-    time_t time_now = start_time;       // 当前时间
-    double unitrate = SLOW_CHARGE_RATE; // 充电速率
+    ChargePortPtr->ElectNow = 0;     // 当前充电汽车充电量
+    ChargePortPtr->ServicePrice = 0; // 当前充电汽车服务价
+    ChargePortPtr->ElectPrice = 0;   // 当前充电汽车总电价
+    time_t start_time = time(NULL);  // 起始时间
 
+    time_t start_timeAC = (start_time - ChargePortPtr->FiveTime) * 60 + ChargePortPtr->ActualFiveTime; //起始时间转化为换算后时间
+    RepPtr->StChargeTime = start_timeAC;
+    time_t time_now = start_time;       // 当前时间
+    time_t time_nowAC;                  //当前时间转化为换算之后的时间
+    double unitrate = SLOW_CHARGE_RATE; // 充电速率，单位时间电量
+    if (ChargePortPtr->IsFastCharge)
+        unitrate = FAST_CHARGE_RATE;
     double start_ChargeCost = ChargePortPtr->ChargeCost;   // 保留充电桩原数据
     double start_ChargeTime = ChargePortPtr->ChargeTime;   // 保留充电桩原数据
     double start_TotalElect = ChargePortPtr->TotalElect;   // 保留充电桩原数据
@@ -39,33 +48,85 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
     double start_ElectCost = ChargePortPtr->ElectCost;     // 保留充电桩原数据
     double start_BatteryNow = CarPtr->BatteryNow;          // 保留汽车原数据
 
-    if (ChargePortPtr->IsFastCharge)
-        unitrate = FAST_CHARGE_RATE;
+    std::cout << "User " << RepPtr->Ask.usrname << " is charging" << std::endl;
 
-    std::cout << "用户" << RepPtr->Ask.usrname << "正在充电中。。" << std::endl;
-
-    while (ElectNow < ElectReq &&
-        CarPtr->BatteryNow != CarPtr->BatteryCap &&
-        !ChargePortPtr->stopCharging)
+    while (ChargePortPtr->ElectNow < ElectReq &&
+           CarPtr->BatteryNow != CarPtr->BatteryCap &&
+           !ChargePortPtr->stopCharging)
     {
-        // Sleep(3); // 每3秒进行一次数据更新。
-        //Sleep(3000); // 每3秒进行一次数据更新。
+        Sleep(500); // 每500ms进行一次数据更新。
         time_now = time(NULL);
-        int time = time_now - start_time;
-        // 这里的时间计算加速了，可以后期调整，每1s作为1min计算。
-        ElectNow = unitrate * time / 60;
-        ElectPrice = HIGH_ELEC_PRICE * ElectNow;
-        ServicePrice = SERVICE_PRICE * ElectNow;
+        int time = (time_now - start_time) * 60;                    // 这里的时间计算加速了，可以后期调整，每1s作为60s计算。
+        time_nowAC = start_timeAC + time;                           //当前时间转化为换算之后的时间
+        ChargePortPtr->ElectNow = unitrate * (double)time / 3600.0; // time/3600是从s换算成h
+
+        /*
+        计算price
+        */
+        double price = 0;                //计算电价
+        int id = 0;                      //计算当前所在时间区间序号
+        time_t tt = start_timeAC;        //每个时间块的起始时间
+        time_t last_tt = tt;             //上一个时间块的起始时间
+        struct tm *ttm = localtime(&tt); //时间块起始时间的tm格式
+        for (;;)
+        {
+            //寻找当前时间所在的时间块
+            id = 0;
+            for (int i = 0; i < CHANGE_SIZE - 1; ++i)
+            {
+                if (ttm->tm_hour >= TimeChange[i] && ttm->tm_hour < TimeChange[i + 1])
+                {
+                    id = i;
+                    break;
+                }
+            }
+            last_tt = tt;
+            if (TimeChange[id + 1] != 24)
+            {
+                ttm->tm_hour = TimeChange[id + 1];
+                ttm->tm_min = 0;
+                ttm->tm_sec = 0;
+                tt = mktime(ttm);
+            }
+            else //若为24点则加一天
+            {
+                ttm->tm_hour = 23;
+                ttm->tm_min = 59;
+                ttm->tm_sec = 59;
+                tt = mktime(ttm);
+                tt = tt + 1;
+                ttm = localtime(&tt);
+            }
+            if (tt >= time_nowAC)
+            {
+                break;
+            }
+            else
+            {
+                price += KindPrice[ChangeKind[id]] * unitrate * double(tt - last_tt) / 3600.0; // time/3600是从s换算成h
+            }
+        }
+        price += KindPrice[ChangeKind[id]] * unitrate * double(time_nowAC - last_tt) / 3600.0; // time/3600是从s换算成h
+        /*if (price < 0)
+        {
+            std::cout << price << ' ' << ' ' << KindPrice[ChangeKind[id]] << ' ' << unitrate << ' ' << timeAC - last_tt << std::endl;
+        }*/
+        // 把 price 更新到 ChargePortPtr->ElectPrice
+        ChargePortPtr->ElectPrice = price;
+
+        // 计算服务费
+        ChargePortPtr->ServicePrice = SERVICE_PRICE * ChargePortPtr->ElectNow;
+
         ChargePortPtr->ChargeTime = start_ChargeTime + time;
-        ChargePortPtr->TotalElect = start_TotalElect + ElectNow;
+        ChargePortPtr->TotalElect = start_TotalElect + ChargePortPtr->ElectNow;
         ChargePortPtr->CurElectReq = CarPtr->BatteryCap - CarPtr->BatteryNow;
-        if (ElectReq - ElectNow < CarPtr->BatteryCap - CarPtr->BatteryNow)
-            ChargePortPtr->CurElectReq = ElectReq - ElectNow;
-        ChargePortPtr->ElectCost = start_ElectCost + ElectPrice;
-        ChargePortPtr->ServiceCost = start_ServiceCost + ServicePrice;
+        if (ElectReq - ChargePortPtr->ElectNow < CarPtr->BatteryCap - CarPtr->BatteryNow)
+            ChargePortPtr->CurElectReq = ElectReq - ChargePortPtr->ElectNow;
+        ChargePortPtr->ElectCost = start_ElectCost + ChargePortPtr->ElectPrice;
+        ChargePortPtr->ServiceCost = start_ServiceCost + ChargePortPtr->ServicePrice;
         ChargePortPtr->ChargeCost = ChargePortPtr->ServiceCost + ChargePortPtr->ElectCost;
-        if (start_BatteryNow + ElectNow < CarPtr->BatteryCap)
-            CarPtr->BatteryNow = start_BatteryNow + ElectNow;
+        if (start_BatteryNow + ChargePortPtr->ElectNow < CarPtr->BatteryCap)
+            CarPtr->BatteryNow = start_BatteryNow + ChargePortPtr->ElectNow;
         else
         {
             CarPtr->BatteryNow = CarPtr->BatteryCap;
@@ -73,19 +134,29 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
         }
     }
 
+    /* 输出结束充电的时间和充电量和价格
+    tm *ttmAC = localtime(&timeAC);
+    std::cout << ttmAC->tm_year + 1900 << '/';
+    std::cout << ttmAC->tm_mon + 1 << '/';
+    std::cout << ttmAC->tm_mday << "  ";
+    std::cout << ttmAC->tm_hour << ':' << ttmAC->tm_min << ':' << ttmAC->tm_sec << std::endl;
+
+    std::cout << ChargePortPtr->ElectNow << ' ' << ChargePortPtr->ServicePrice << ' ' << ChargePortPtr->ElectPrice << std::endl;
+    */
+
     // 更新一张充电表
-    CostTable costtable{ ++ChargeTableID,
+    CostTable costtable{++ChargeTableID,
                         time(NULL),
                         ChargePortPtr->SID,
                         ChargePortPtr->IsFastCharge, // 充电模式
                         CarPtr->usrname,
-                        start_time,
-                        time_now,
-                        ElectNow,
-                        time_now - start_time,
-                        ElectPrice + ServicePrice,
-                        ServicePrice,
-                        ElectPrice };
+                        start_timeAC,
+                        time_nowAC,
+                        ChargePortPtr->ElectNow,
+                        time_nowAC - start_timeAC,
+                        ChargePortPtr->ElectPrice + ChargePortPtr->ServicePrice,
+                        ChargePortPtr->ServicePrice,
+                        ChargePortPtr->ElectPrice};
     for (;;)
     {
         if (ChargeTablelock.try_lock())
@@ -93,7 +164,7 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
             break;
         }
     }
-    ChargeTablePool* nextct = new ChargeTablePool;
+    ChargeTablePool *nextct = new ChargeTablePool;
     nextct->isAvailable = false;
     nextct->ChargeTable = costtable;
     ChargeTableTail->next = nextct;
@@ -109,6 +180,11 @@ int ChargeProc(ChargePort* ChargePortPtr, Car* CarPtr, CarReply* RepPtr, double 
     //把下一个waiting放入charging
     for (;;)
     {
+        if (ChargePortPtr->stopCharging)
+        {
+            ChargePortPtr->stopCharging = false;
+            return 0;
+        }
         if (ChargePortPtr->CPlock.try_lock())
         {
             break;
@@ -136,7 +212,7 @@ void ChargeThread()
                     break;
                 }
             }
-            ChargeThreadPool* next = ChargeHead->next;
+            ChargeThreadPool *next = ChargeHead->next;
             delete ChargeHead;
 
             // 从线程池里取出并创造一个充电线程
@@ -186,11 +262,13 @@ void BuildChargePortThread()
         Sth.detach();
     */
 }
-ChargePort::ChargePort(int CPID, bool fast, bool on, int WNum , int CCnt , double CCost , double ECost, long long CTime, double TElect, double SCost)
+ChargePort::ChargePort(int CPID, bool fast, bool on, time_t FiveT, int WNum, int CCnt, double CCost, double ECost, long long CTime, double TElect, double SCost)
 {
     this->SID = CPID;
     this->IsFastCharge = fast;
     this->OnState = on;
+    FiveTime = FiveT;
+    ActualFiveTime = 1656104400; // 2022/6/25 05:00:00 对应的time_t
     WaitNum = WNum;
     WaitCount = 0;
     IsCharging = false;
@@ -199,6 +277,10 @@ ChargePort::ChargePort(int CPID, bool fast, bool on, int WNum , int CCnt , doubl
     WaitingCarReply.clear();
     ChargingCar = NULL;
     WaitingCar.clear();
+
+    ElectNow = 0;
+    ServicePrice = 0;
+    ElectPrice = 0;
 
     PastChargeCnt = CCnt;
     PastChargeCost = CCost;
@@ -238,6 +320,7 @@ bool ChargePort::off()
     }
     if (IsCharging || WaitCount != 0) // 有车在充电区时失败
     {
+        CPlock.unlock();
         return 0;
     }
     OnState = false;
@@ -272,20 +355,25 @@ CarReply ChargePort::GetChargingCar()
         }
     }
     if (IsCharging)
+    {
+        CPlock.unlock();
         return ChargingCarReply;
+    }
     else
     {
         NULLCarReply.Ask.StWaitTime = time(NULL);
+
+        CPlock.unlock();
         return NULLCarReply;
     }
     CPlock.unlock();
 }
-bool ChargePort::AddCar(CarReply myreply, Car* mycar)
+bool ChargePort::AddCar(CarReply myreply, Car *mycar)
 {
     std::cout << "addCar here" << std::endl;
     for (;;)
     {
-        std::cout << mycar->usrname << "asking....\n";
+        std::cout << mycar->usrname << " asking....\n";
         if (CPlock.try_lock())
         {
             break;
@@ -295,6 +383,7 @@ bool ChargePort::AddCar(CarReply myreply, Car* mycar)
     {
         if (WaitNum <= WaitCount)
         {
+            CPlock.unlock();
             return false;
         }
         else
@@ -313,13 +402,13 @@ bool ChargePort::AddCar(CarReply myreply, Car* mycar)
         //将一个新的充电过程放到充电线程池。
         for (;;)
         {
-           
+
             if (Chargelock.try_lock())
             {
                 break;
             }
         }
-        ChargeThreadPool* nextth = new ChargeThreadPool;
+        ChargeThreadPool *nextth = new ChargeThreadPool;
         nextth->isAvailable = false;
         nextth->ChargePortPtr = this;
         nextth->CarPtr = mycar;
@@ -330,11 +419,11 @@ bool ChargePort::AddCar(CarReply myreply, Car* mycar)
         ChargeTail = nextth;
         Chargelock.unlock();
     }
-    std::cout << mycar->usrname << "add car ...done" << std::endl;
+    std::cout << mycar->usrname << " add car ...done" << std::endl;
     CPlock.unlock();
     return true;
 }
-bool ChargePort::DeleteCar(Car* mycar)
+bool ChargePort::DeleteCar(Car *mycar)
 {
     for (;;)
     {
@@ -365,6 +454,8 @@ bool ChargePort::DeleteCar(Car* mycar)
         }
         WaitingCarReply.pop_back();
         --WaitCount;
+
+        CPlock.unlock();
         return true;
     }
     else if (mycar == ChargingCar)
@@ -386,6 +477,7 @@ bool ChargePort::DeleteCar(Car* mycar)
         {
             IsCharging = false;
         }
+        CPlock.unlock();
         return true;
     }
     CPlock.unlock();
@@ -405,7 +497,7 @@ void ChargePort::PutWaitingToCharging()
     ChargingCarReply = WaitingCarReply[0];
     IsCharging = true;
 
-    ChargeThreadPool* nextth = new ChargeThreadPool;
+    ChargeThreadPool *nextth = new ChargeThreadPool;
     nextth->isAvailable = false;
     nextth->ChargePortPtr = this;
     nextth->CarPtr = ChargingCar;
