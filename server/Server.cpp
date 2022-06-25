@@ -7,6 +7,7 @@ extern struct Info send_info, recv_info;
 Server::Server(int res) {
     //数据库自动同步到本地<数据库构造函数已经完成>
 
+    time_t cur = time(NULL);
     //第一次上线，不载入历史信息
     if (res == 0) {
         //启动并初始化充电桩
@@ -17,6 +18,8 @@ Server::Server(int res) {
                 cData.push_back(new ChargePort(i, true, true, MAX_WAIT_NUM));
             else
                 cData.push_back(new ChargePort(i, false, true, MAX_WAIT_NUM));
+            
+            cData[i]->FiveTime = cur;
         }
     }
 
@@ -152,7 +155,7 @@ void Server::sendDetail(ChargeTablePool* next)
     send_info.cmd = DETAIL;
     strcpy_s(send_info.UID, next->ChargeTable.usrname.c_str());
 
-    string res = "------------------------------充电详单------------------------------\n";
+    string res = "--------------------------------充电详单--------------------------------\n";
     res += "详单编号: " + to_string(next->ChargeTable.ChargeID) + "\n";
     res += "详单生成时间: " + getCurTime(next->ChargeTable.CreateTableTime) + "\n";
     res += "充电桩编号: " + to_string(next->ChargeTable.SID) + "\n";
@@ -791,12 +794,14 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     for (int i = 0; i < FAST_NUM; i++) {
         if (cData[i]->WaitCount +1 == QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
+      
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
             cur += (CUser[usr]->ChargeCap / FAST_POWER) * 60;
         }
-        cur += (cData[i]->CurElectReq / FAST_POWER) * 60;
+        if(cData[i]->IsCharging)
+            cur += (cData[i]->CurElectReq / FAST_POWER) * 60;
         if (cur < fTime) {
             fSID = i;
             fTime = cur;
@@ -805,12 +810,14 @@ int Server::getFreeCP(int& fSID, int& tSID, int& fTime, int& tTime)
     for (int i = FAST_NUM; i < CHARGEPORT_NUM; i++) {
         if (cData[i]->WaitCount +1 == QUEUE_LENGTH || cData[i]->OnState == false)
             continue;//无空位或故障或关闭的充电桩跳过
+        
         int cur = 0;
         for (int j = 0; j < cData[i]->WaitCount; j++) {
             string usr = cData[i]->WaitingCar[j]->usrname;
             cur += (CUser[usr]->ChargeCap / SLOW_POWER) * 60;
         }
-        cur += (cData[i]->CurElectReq / SLOW_POWER) * 60;
+        if (cData[i]->IsCharging)
+            cur += (cData[i]->CurElectReq / SLOW_POWER) * 60;
         if (cur < tTime) {
             tSID = i;
             tTime = cur;
